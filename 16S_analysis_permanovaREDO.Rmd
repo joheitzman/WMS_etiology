@@ -1,0 +1,2331 @@
+---
+title: "WMS 2 - Electric boogaloo"
+author: "Joshua Heitzman"
+date: "20 December 2022"
+output:
+  html_notebook: null
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+```{r setup, include=TRUE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+	fig.path = "figures/",
+	message = FALSE,
+	warning = FALSE,
+	dev = c("png", "pdf"))
+
+## Basic packages for data input and manipulation
+library("tidyverse")
+library("patchwork")
+
+## Packages for ASV input, data manipulation and visualization 
+library("phyloseq") # ASV input
+library("ape") # For adding phylo tree to phyloseq data
+library("microbiomeMarker") # Normalizing data while retaining phyloseq object
+library("microViz") # Easier visualization of ASV/PiCRUST2 data as a distance-based plot
+library("MicEco") # Overlapping ASV visualization between seasons/sample-types
+
+## Figure plots ##
+library("reshape2")
+library("stringr")
+library("ggplot2")
+library("ggpubr")
+library("RColorBrewer")
+library("pheatmap") # Simple heatmap production
+
+## Stats packages
+library("vegan") # PERMANOVA and MDS functions
+library("pairwiseAdonis") # Pairwise permanova using adonis2
+
+# Function for opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+# Just setting the lang to English...
+Sys.setlocale("LC_ALL","English")
+```
+################################################################
+######################  Sample Overview   ######################
+################################################################
+
+######## Field - Winter (December to May), Summer (June to November)
+######## Sample Types - 
+######## Coral_Summer               N = 8
+######## Coral_Winter               N = 3
+######## Gelidium_Summer	          N = 10
+######## Gelidium_Winter	          N = 5
+######## Sediment_Summer	          N = 4
+######## Sediment_Winter	          N = 1
+######## Disease_Summer	            N = 9
+######## Seawater_Summer	          N = 3
+######## Seawater_Winter	          N = 2
+
+################################################################
+
+######## Incubation - Winter experiment (December 2019 to February 2020), Summer experiment (September to October 2020)
+########  Sample Types - 
+########  Winter Experiment (No disease occurrences)
+########  Winter Coral Start        N = 3
+########  Winter G. elegans Start   N = 3
+########  Winter Seawater End       N = 3
+
+########  Summer Experiment (8 disease occurrences)
+########  Summer Coral Start        N = 6
+########  Summer G. elegans Start   N = 6
+########  Summer WMS Start          N = 6
+########  Summer G. elegans End     N = 6 (1B-05 is included, but was asymptomatic (no disease mat observed))
+########  Summer WMS End            N = 4 (Combined both WMS inoculated (N = 1) and WMS + injury inoculated treatments (N = 3))
+########  Summer Seawater End       N = 3
+
+####################################################################################################
+########  Prior to analysis/plotting, chlorophyll and mitochondrial ASVs were hand-removed  ########
+####################################################################################################
+
+## ASV data input and phyloseq
+```{r Phyloseq - All}
+OTU_list <- read.csv("QIIME2_ASV_data/lvl7_samps_nochlo.csv", row.names = 1)
+Taxa_list <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv", row.names = 1)
+OTU <- otu_table(OTU_list, taxa_are_rows = TRUE)
+TAX <- tax_table(as.matrix(Taxa_list))
+physeq_all = phyloseq(OTU, TAX)
+physeq_all_s = tax_glom(physeq_all, "species")
+
+SAM <- read.csv("QIIME2_ASV_data/2022_metadata_lvl7.csv", row.names = 1) 
+SAM = sample_data(as.data.frame(SAM))
+
+random_tree = rtree(ntaxa(physeq_all_s), rooted=TRUE, tip.label=taxa_names(physeq_all_s))
+physeq_main = merge_phyloseq(physeq_all_s, SAM, random_tree)
+
+# Total sum scaling (relative abundance)
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+
+# Filtering out sample_types and whether field/incubation for further analysis
+
+#Field
+physeq_field_n <- ps_filter(physeq_main_n, Environment_plus == "Field" & Environment_plus != "Incubation")
+physeq_field_summer_n <- ps_filter(physeq_field_n, Season == "Summer")
+physeq_field_winter_n <- ps_filter(physeq_field_n, Season == "Winter")
+
+
+#Incubation
+physeq_incub_all_n <- ps_filter(physeq_main_n, Incubation == TRUE)
+physeq_incub_summer_n <- ps_filter(physeq_incub_all_n, Season == "Summer" & Experiment != "Seawater")
+physeq_incub_winter_n <- ps_filter(physeq_incub_all_n, Season == "Winter" & Experiment != "Seawater")
+
+######### Exporting filtered phyloseq objects to tsv for bubble plots #########
+
+### Field ###
+## Phyloseq object -> matrix -> dataframe
+physeq_field_n_matrix = as(otu_table(ps_filter(physeq_field_n, Experiment_Season != "Disease_Winter")), "matrix") # matrix
+#if(taxa_are_rows(physeq_main_n)){physeq_main_n_matrix <- t(physeq_main_n_matrix)} #transpose if necessary
+physeq_field_n_df = as.data.frame(physeq_field_n_matrix) #df coercion
+write.csv(physeq_field_n_df, file = "bubble_plot_data/export_phyloseq/field/field_bubble_samps.csv")
+
+# Taxa from phyloseq -> matrix -> dataframe
+physeq_field_taxa_matrix = as(tax_table(ps_filter(physeq_field_n, Experiment_Season != "Disease_Winter")), "matrix")
+physeq_field_taxa_df = as.data.frame(physeq_field_taxa_matrix) #df coercion
+write.csv(physeq_field_taxa_df, file = "bubble_plot_data/export_phyloseq/field/field_bubble_taxa.csv")
+
+# Season sep Field
+## Summer
+physeq_SUMfield_n_matrix = as(otu_table(
+  ps_filter(physeq_field_summer_n, Experiment_Season != c("Disease_Winter", "Sediment_Winter"))), "matrix") # matrix
+physeq_SUMfield_n_df = as.data.frame(physeq_SUMfield_n_matrix) #df coercion
+write.csv(physeq_SUMfield_n_df, file = "bubble_plot_data/export_phyloseq/field/SUMfield_bubble_samps.csv")
+## Summer Taxa
+physeq_SUMfield_taxa_matrix = as(tax_table(
+  ps_filter(physeq_field_summer_n, Experiment_Season != c("Disease_Winter", "Sediment_Winter"))), "matrix")
+physeq_SUMfield_taxa_df = as.data.frame(physeq_SUMfield_taxa_matrix) #df coercion
+write.csv(physeq_SUMfield_taxa_df, file = "bubble_plot_data/export_phyloseq/field/SUMfield_bubble_taxa.csv")
+
+## Winter
+physeq_WINfield_n_matrix = as(otu_table(
+  ps_filter(physeq_field_winter_n, Experiment_Season != c("Disease_Winter", "Sediment_Winter"))), "matrix") # matrix
+physeq_WINfield_n_df = as.data.frame(physeq_WINfield_n_matrix) #df coercion
+write.csv(physeq_WINfield_n_df, file = "bubble_plot_data/export_phyloseq/field/WINfield_bubble_samps.csv")
+## Winter Taxa
+physeq_WINfield_taxa_matrix = as(tax_table(
+  ps_filter(physeq_field_winter_n, Experiment_Season != c("Disease_Winter", "Sediment_Winter"))), "matrix")
+physeq_WINfield_taxa_df = as.data.frame(physeq_WINfield_taxa_matrix) #df coercion
+write.csv(physeq_WINfield_taxa_df, file = "bubble_plot_data/export_phyloseq/field/WINfield_bubble_taxa.csv")
+
+### Incubation ###
+# All incubation (both experiments)
+physeq_incub_all_n_matrix = as(otu_table(physeq_incub_all_n), "matrix") # matrix
+physeq_incub_all_n_df = as.data.frame(physeq_incub_all_n_matrix) #df coercion
+write.csv(physeq_incub_all_n_df, file = "bubble_plot_data/export_phyloseq/incub/incub_all_bubble_samps.csv")
+
+physeq_incub_taxa_matrix = as(tax_table(physeq_incub_all_n), "matrix")
+physeq_incub_taxa_df = as.data.frame(physeq_incub_taxa_matrix) #df coercion
+write.csv(physeq_incub_taxa_df, file = "bubble_plot_data/export_phyloseq/incub/incub_all_bubble_taxa.csv")
+
+# Summer only
+physeq_incub_summer_n_matrix = as(otu_table(physeq_incub_summer_n), "matrix") # matrix
+physeq_incub_summer_n_df = as.data.frame(physeq_incub_summer_n_matrix) #df coercion
+write.csv(physeq_incub_summer_n_df, file = "bubble_plot_data/export_phyloseq/incub/incub_summer_bubble_samps.csv")
+
+physeq_incub_summer_taxa_matrix = as(tax_table(physeq_incub_summer_n), "matrix")
+physeq_incub_summer_taxa_df = as.data.frame(physeq_incub_summer_taxa_matrix) #df coercion
+write.csv(physeq_incub_summer_taxa_df, file = "bubble_plot_data/export_phyloseq/incub/incub_summer_bubble_taxa.csv")
+
+# Winter only
+physeq_incub_winter_n_matrix = as(otu_table(physeq_incub_winter_n), "matrix") # matrix
+physeq_incub_winter_n_df = as.data.frame(physeq_incub_winter_n_matrix) #df coercion
+write.csv(physeq_incub_winter_n_df, file = "bubble_plot_data/export_phyloseq/incub/incub_winter_bubble_samps.csv")
+
+physeq_incub_winter_taxa_matrix = as(tax_table(physeq_incub_winter_n), "matrix")
+physeq_incub_winter_taxa_df = as.data.frame(physeq_incub_winter_taxa_matrix) #df coercion
+write.csv(physeq_incub_winter_taxa_df, file = "bubble_plot_data/export_phyloseq/incub/incub_winter_bubble_taxa.csv")
+
+###############################################################################
+
+# write.csv(ps_melt(physeq_main_n), file = "QIIME2_ASV_data/all_data.csv")
+```
+Bacterial consortia analysis - Using ASV/Relative Abundance
+Bubble plots - Using relative abundance (mean +- sd)
+
+# Field Bubbles
+```{r Bubble Plot - Field - Season Sep}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/field/field_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/field/field_bubble_taxa.csv"
+
+replicates_groups <- c("Gelidium_Winter",	"Seawater_Winter",	"Gelidium_Winter",	"Sediment_Winter",	"Seawater_Winter",	"Coral_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Disease_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Gelidium_Winter",	"Coral_Winter",	"Gelidium_Winter",	"Coral_Winter",	"Gelidium_Winter",	"Coral_Winter")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("F01.21.GEL",	"F01.21.WAT",	"F04.21.GEL",	"F04.21.SED",	"F04.21.WAT",	"F07.20.COR",	"F07.20.GEL",	"F07.20.SED",	"F07.20.WMS",	"F07.21.COR",	"F07.21.GEL",	"F07.21.SED",	"F07.21.WAT",	"F09.21.GEL",	"F09.21.SED",	"F09.21.WAT",	"F09.21.WMS",	"F10.20.GEL",	"F10.20.SED",	"F10.20.WAT",	"F10.20.WMS",	"SSt1.1A.COR",	"SSt1.1A.GEL",	"SSt1.WMS",	"SSt2.1B.COR",	"SSt2.1B.GEL",	"SSt2.WMS",	"SSt3.1C.COR",	"SSt3.1C.GEL",	"SSt3.WMS",	"SSt4.1D.COR",	"SSt4.1D.GEL",	"SSt4.WMS",	"SSt5.2C.COR",	"SSt5.2C.GEL",	"SSt5.WMS",	"SSt6.2D.COR",	"SSt6.2D.GEL",	"SSt6.WMS",	"WSt1.1A.04.GEL",	"WSt1.1A.COR", "WSt2.1A.05.GEL",	"WSt2.1C.COR",	"WSt3.1A.06.GEL",	"WSt3.2C.COR")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "field_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+field_all_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+field_all_labelled_noOther <- field_all_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Season = case_when(
+    endsWith(sample, "Winter") ~ "Winter",
+    endsWith(sample, "Summer") ~ "Summer"))
+field_all_labelled_noOther$sample <- factor(field_all_labelled_noOther$sample, levels = c("Disease_Summer",
+  "Gelidium_Summer", "Gelidium_Winter", "Sediment_Summer", "Sediment_Winter",
+  "Coral_Summer", "Coral_Winter", 
+   "Seawater_Summer", "Seawater_Winter"),
+                                                          labels = c("WMS (N = 9)",
+  "G. elegans (N = 10)",  "G. elegans (N = 5)", "Sediment (N = 4)",  "Sediment (N = 1)",
+  "VH Coral (N = 8)",  "VH Coral (N = 3)",  
+    "Seawater (N = 3)",  "Seawater (N = 2)"), ordered = TRUE)
+#######################################
+
+taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+allfield_bubble <- merge(field_all_labelled_noOther, taxa_match, 
+                                          by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+
+############ bubble plot ############
+field_sumwin_bubble <-
+  ggplot(allfield_bubble,aes(sample,tax_bin)) +
+    geom_point(aes(size=100*(mean+sd)), shape=16, alpha = 1, color = "grey", ) + 
+    geom_point(aes(size=100*mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Set2", name="Taxonomic clade") +
+    scale_size(name = "Relative abundance (%)") +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 6),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.text.x = element_text(size = 8)
+  )  +
+  facet_grid(cols = vars(Season), scales = "free")
+ggsave("all_figures/bubble_plots/field_bubble_plot.png", width = 7, height = 5)
+#####################################
+
+```
+
+# Incubation Bubbles
+```{r Bubble Plot - All Incubation}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/incub/incub_all_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/incub/incub_all_bubble_taxa.csv"
+
+replicates_groups <- c("G. elegans End_Summer",	"G. elegans End_Summer",	"WMS End_Summer",	"G. elegans End_Summer",	"G. elegans End_Summer",	"Seawater End_Summer",	"G. elegans End_Summer",	"WMS End_Summer",	"WMS End_Summer",	"WMS End_Summer",	"G. elegans End_Summer",	"Seawater End_Summer",	"Seawater End_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Coral Start_Summer",	"G. elegans Start_Summer",	"WMS Start_Summer",	"Seawater End_Winter",	"Seawater End_Winter",	"Seawater End_Winter",	"G. elegans Start_Winter",	"Coral Start_Winter",	"G. elegans Start_Winter",	"Coral Start_Winter",	"G. elegans Start_Winter",	"Coral Start_Winter")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("SEnd.1A.02.WMS",	"SEnd.1B.05.WMS",	"SEnd.1C.04.WMS",	"SEnd.1C.06.WMS",	"SEnd.1D.07.WMS",	"SEnd1.WAT",	"SEnd.2C.04.WMS",	"SEnd.2C.06.WMS",	"SEnd.2D.05.WMS",	"SEnd.2D.07.WMS",	"SEnd.2D.09.WMS",	"SEnd2.WAT",	"SEnd3.WAT",	"SSt1.1A.COR",	"SSt1.1A.GEL",	"SSt1.WMS",	"SSt2.1B.COR",	"SSt2.1B.GEL",	"SSt2.WMS",	"SSt3.1C.COR",	"SSt3.1C.GEL",	"SSt3.WMS",	"SSt4.1D.COR",	"SSt4.1D.GEL",	"SSt4.WMS",	"SSt5.2C.COR",	"SSt5.2C.GEL",	"SSt5.WMS",	"SSt6.2D.COR",	"SSt6.2D.GEL",	"SSt6.WMS",	"WEnd1.WAT",	"WEnd2.WAT",	"WEnd3.WAT",	"WSt1.1A.04.GEL",	"WSt1.1A.COR",	"WSt2.1A.05.GEL",	"WSt2.1C.COR",	"WSt3.1A.06.GEL",	"WSt3.2C.COR")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "incub_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+# otu_tab[1:5,1:5]
+
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+# tax_tab[1:5,1:4]
+
+# Delete all cells containing 'uncultured' or 'unknown'
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+
+# Replace empty cells by 'NA'
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+
+# Remove columns containing only 'NA'
+col_to_remove <- c()
+
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+
+# Set taxonomic annotations as character variables
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+
+# Fill all NAs
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+
+# Check that the sum of relative abundances for each sample is 1.
+# colSums(otu_tab2[,-1])
+m <- merge(otu_tab2, tax_tab3)
+# Has the merged table the expected dimension?
+# dim(m)
+
+# First, we should save in a column the taxonomic information needed for computing the bubble plot
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+
+# Subset from the merged table the selected samples only
+m2 <- m[,names(m) %in% replicates_list]
+
+# Aggregate 'm2' based on the selected taxonomic level
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+# dim(m3)
+# m3[1:5,1:4]
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+    
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+
+# Aggregate the smaller taxonomic bins together
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+
+# What is the relative abundances of the taxonomic bins that were pooled together in the 'Other' bin?
+# m4[m4$taxonomy == "Other;Other", -1]
+
+# mean(as.numeric(m4[m4$taxonomy == "Other;Other", -1]))
+
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+# Compute the mean
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+# dim(m4.t.mean)                              
+# Compute the standard deviation                             
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)],
+                              by = list(m4.t$replicate),
+                              FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+# dim(m4.t.sd)
+
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+
+# Merge the dataframes
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+
+# Reorder the taxonomic annotation for the plot
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+
+# Remove null values
+incub_all_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+incub_all_labelled_noOther <- incub_all_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Season = case_when(
+    endsWith(sample, "Winter") ~ "Winter",
+    endsWith(sample, "Summer") ~ "Summer")) %>%
+  mutate(Time = case_when(
+    grepl("Start", sample, ignore.case = TRUE) ~"Start",
+    grepl("End", sample, ignore.case = TRUE) ~"End"))
+incub_all_labelled_noOther$sample <- factor(incub_all_labelled_noOther$sample, levels = c(
+  "WMS Start_Summer", "WMS End_Summer", "G. elegans Start_Summer", "G. elegans End_Summer", 
+  "Coral Start_Summer", "Seawater End_Summer", 
+  "G. elegans Start_Winter", "Coral Start_Winter", "Seawater End_Winter"),
+                                                                               labels = c(
+  "Start WMS\n(Summer, N = 6)", "End WMS\n(Summer, N = 4)","Start G. elegans\n(Summer, N = 6)","End G. elegans\n(Summer, N = 6)",
+  "Start VH coral\n(Summer, N =6)","End Seawater\n(Summer, N = 3)",
+  "Start G. elegans\n(Winter, N = 3)","Start VH coral\n(Winter, N = 3)","End Seawater\n(Winter, N = 3)"), ordered = TRUE)
+#######################################
+
+############ bubble plot ############
+ggplot(incub_all_labelled_noOther,aes(sample,tax_bin)) +
+    geom_point(aes(size=mean+sd), shape=16, alpha = 0.5, color = "black", ) + 
+    geom_point(aes(size=mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Paired", name="Taxonomic clade") +
+    scale_size(name = "Relative\nabundance") +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 10),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  facet_grid(cols = vars(Season), scales = "free")
+ggsave("all_figures/bubble_plots/incub_bubble_plot.png", width = 7, height = 5)
+#####################################
+
+
+```
+
+```{r Bubble Plot - Summer Incubation}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/incub/incub_summer_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/incub/incub_summer_bubble_taxa.csv"
+
+replicates_groups <- c("G. elegans",	"G. elegans",	"WMS",	"G. elegans",	"G. elegans",	"G. elegans",	"WMS",	"WMS",	"WMS",	"G. elegans",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("SEnd.1A.02.WMS",	"SEnd.1B.05.WMS",	"SEnd.1C.04.WMS",	"SEnd.1C.06.WMS",	"SEnd.1D.07.WMS",		"SEnd.2C.04.WMS",	"SEnd.2C.06.WMS",	"SEnd.2D.05.WMS",	"SEnd.2D.07.WMS",	"SEnd.2D.09.WMS",	"SSt1.1A.COR",	"SSt1.1A.GEL",	"SSt1.WMS",	"SSt2.1B.COR",	"SSt2.1B.GEL",	"SSt2.WMS",	"SSt3.1C.COR",	"SSt3.1C.GEL",	"SSt3.WMS",	"SSt4.1D.COR",	"SSt4.1D.GEL",	"SSt4.WMS",	"SSt5.2C.COR",	"SSt5.2C.GEL",	"SSt5.WMS",	"SSt6.2D.COR",	"SSt6.2D.GEL",	"SSt6.WMS")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "incub_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+incub_summer_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+incub_summer_labelled_noOther <- incub_summer_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Time = case_when(
+    grepl("Start", sample, ignore.case = TRUE) ~"Start",
+    grepl("End", sample, ignore.case = TRUE) ~"End"))
+incub_summer_labelled_noOther$sample <- factor(incub_summer_labelled_noOther$sample, levels = c(
+  "WMS", "G. elegans", "Coral"),
+                                                                               labels = c(
+  "WMS\n(Summer, N = 10)","G. elegans\n(Summer, N = 12)", "VH Coral\n(Summer, N =6)"), ordered = TRUE)
+#######################################
+taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+incub_summer_labelled_famspecies <- merge(incub_summer_labelled_noOther, taxa_match, 
+                                          by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+  
+
+############ bubble plot ############
+summer_bubble <- 
+  ggplot(incub_summer_labelled_famspecies,aes(sample,tax_bin)) +
+    geom_point(aes(size=100*(mean+sd)), shape=16, alpha = 1, color = "grey", ) + 
+    geom_point(aes(size=100*mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Set2", name="Taxonomic clade") +
+    scale_size(name = "Relative abundance (%)") +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 8),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) 
+ggsave("all_figures/bubble_plots/summeronly_incub_bubble_plot.png", width = 5, height = 4)
+#####################################
+
+
+```
+
+```{r Bubble Plot - Winter Incubation}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/incub/incub_winter_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/incub/incub_winter_bubble_taxa.csv"
+
+replicates_groups <- c("G. elegans",	"Coral",	"WMS",	"G. elegans",	"Coral",	"WMS",	"G. elegans",	"Coral",	"WMS")
+
+replicates_list <- c("WSt1.1A.04.GEL",	"WSt1.1A.COR",	"WSt1.WMS",	"WSt2.1A.05.GEL",	"WSt2.1C.COR",	"WSt2.WMS",	"WSt3.1A.06.GEL",	"WSt3.2C.COR",	"WSt3.WMS")
+
+
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "incub_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+incub_winter_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+incub_winter_labelled_noOther <- incub_winter_molten2 %>%
+  filter(tax_bin != "Other")
+incub_winter_labelled_noOther$sample <- factor(incub_winter_labelled_noOther$sample, levels = c(
+  "WMS",	"G. elegans",	"Coral"),labels = c(
+  "WMS\n(Winter, N = 3)", "G. elegans\n(Winter, N = 3)", "VH Coral\n(Winter, N =3)"), ordered = TRUE)
+#######################################
+
+taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+incub_summer_labelled_famspecies <- merge(incub_winter_labelled_noOther, taxa_match, 
+                                          by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+
+############ bubble plot ############
+winter_bubble <-
+ggplot(incub_summer_labelled_famspecies,aes(sample,tax_bin)) +
+    geom_point(aes(size=100*(mean+sd)), shape=16, alpha = 1, color = "grey", ) + 
+    geom_point(aes(size=100*mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Set2", name="Taxonomic clade") +
+    scale_size(name = "Relative abundance\n(%)") +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 8),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) 
+ggsave("all_figures/bubble_plots/winteronly_incub_bubble_plot.png", width = 5, height = 4)
+#####################################
+
+
+```
+
+################################################################
+ASV analysis - from QIIME2 w/ silva v.138
+################################################################
+NMDS plot + PERMANOVA/Pairwise PERMANOVA
+
+# ASV Field nMDS & PERMANOVA
+```{r Bact consortia analysis - Field}
+## Tax lvl = family
+
+# Changing from relative abundance to absolute abundance
+physeq_main_n <- normalize(physeq_main, method = "none")
+physeq_field_n <- ps_filter(physeq_main_n, Environment_plus == "Field" & Experiment_Season != c("Disease_Winter"))
+physeq_field_n_matrix = as(otu_table(physeq_field_n), "matrix")
+
+####### NMDS for FIELD (both seasons) #######
+trans_field_matrix <- sqrt(t(physeq_field_n_matrix))
+trans_field.mds <- metaMDS(trans_field_matrix, distance = "bray", autotransform = FALSE)
+
+trans_field.treat <- data.frame(species = trans_field.mds$species) %>%
+  rownames_to_column(var = "species")
+
+field.treat <- data.frame(sample = rownames(trans_field_matrix), trans_field.mds$points)
+
+# Binding point and taxa labels
+ASVlist <- trans_field.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+trans_field.treat <- trans_field.treat %>% filter(species %in% ASVlist)
+field.taxa <- read.csv("bubble_plot_data/export_phyloseq/field/field_bubble_taxa.csv") %>% filter(X %in% ASVlist)
+taxa.treat.df <- cbind.data.frame(trans_field.treat,field.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+physeq_field.metadata <- as(sample_data(physeq_field_n), "matrix") 
+physeq_field.metadata.df = as.data.frame(physeq_field.metadata)
+
+# Binding point and metadata labels
+sample.labels.df <- cbind.data.frame(physeq_field.metadata.df, field.treat) %>% mutate(Season = as.factor(Season)) %>%
+  select(!10:13) %>%
+  filter(Experiment_Season != c("Disease_Winter")) %>%
+  filter(sample != "WSt3.WMS")
+
+sample.labels.df$Experiment_Other <- 
+  factor(sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Sediment","Coral", "Seawater"),
+         labels = c("WMS","G. elegans", "Sediment", "VH Coral","Seawater"),
+         ordered = TRUE)
+
+# Plotting the NMDS for samples
+plot.nmds.samps <- 
+  ggplot(data = sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(x = MDS1, y = MDS2, color = Experiment_Other, fill = Experiment_Other, shape = Season), size=1) +
+  scale_shape_manual(values=c(1, 9))+
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1") +
+  # labs(caption=paste("Bacteria ASV - Stress =", round(digits = 3, trans_field.mds$stress))) +
+  theme(
+    legend.position = "right", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE) 
+
+
+# Plotting the NMDS for taxa
+plot.nmds.taxa <- 
+  ggplot(data = taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_blank()
+  )
+
+# Filtering to just leave the top 20 taxa from bubble plot
+field_list_bubble <- field_all_molten2[ , 6, drop = FALSE] %>% 
+  unique() %>% as.list() %>% unlist()
+top20.taxa.treat.df <- taxa.treat.df %>% filter(X %in% field_list_bubble)
+
+# Plotting the NMDS for taxa (top 20)
+plot.nmds.taxa.top20 <- 
+  ggplot(data = top20.taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point(aes(fill = phylum), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set2") +
+  theme(
+    legend.position = "right",
+    legend.margin = margin(t = 0, unit = "cm"),    
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title = element_blank()
+  )
+
+plot.nmds.samps/plot.nmds.taxa/plot.nmds.taxa.top20
+plot.nmds.samps +plot.nmds.taxa.top20
+ggsave("all_figures/nmds_plots/field_nmds_plot.png", height = 8, width = 5)
+
+####### PERMANOVA & Pairwise PERMANOVA for FIELD (both seasons) #######
+
+# PERMANOVA using distance matrix
+adonis2(trans_field_matrix ~ Experiment_Other*Season, method = "bray", data = physeq_field.metadata.df, p.adjust = "bonferonni", permutations = 9999)
+
+# Pairwise PERMANOVA
+pairwise.adonis2(trans_field_matrix ~ Experiment_Other*Season,  method = "bray", data = physeq_field.metadata.df, p.adjust = "bonferonni", nperm = 9999)
+#######################################################################
+```
+
+# ASV Incubation nMDS & PERMANOVA
+```{r Bact consortia analysis - Incubation - Only Summer}
+
+# Changing from relative abundance to absolute abundance
+physeq_main_n <- normalize(physeq_main, method = "none")
+physeq_incub_summer_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Summer" & Experiment != "Seawater")
+physeq_incub_summer_n_matrix = as(otu_table(physeq_incub_summer_n), "matrix")
+####### NMDS for FIELD (both seasons) #######
+summer_trans_incub_matrix <- sqrt(t(physeq_incub_summer_n_matrix))
+summer_trans_incub.mds <- metaMDS(summer_trans_incub_matrix, distance = "bray", autotransform = FALSE)
+
+summer_trans_incub.treat <- data.frame(species = summer_trans_incub.mds$species) %>%
+  rownames_to_column(var = "species")
+
+summer_incub.treat <- data.frame(sample = rownames(summer_trans_incub_matrix), summer_trans_incub.mds$points)
+
+# Binding point and taxa labels
+ASVlist <- summer_trans_incub.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+summer_trans_incub.treat <- summer_trans_incub.treat %>% filter(species %in% ASVlist)
+summer_incub.taxa <- read.csv("bubble_plot_data/export_phyloseq/incub/incub_summer_bubble_taxa.csv") %>% filter(X %in% ASVlist)
+summer_incub_taxa.treat.df <- cbind.data.frame(summer_trans_incub.treat,summer_incub.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+physeq_summer_incub.metadata <- as(sample_data(physeq_incub_summer_n), "matrix") 
+physeq_summer_incub.metadata.df = as.data.frame(physeq_summer_incub.metadata)
+
+# Binding point and metadata labels
+summer_incub_sample.labels.df <- cbind.data.frame(physeq_summer_incub.metadata.df, summer_incub.treat)
+
+# Renaming and ordering factors
+summer_incub_sample.labels.df$Experiment_Other <- 
+  factor(summer_incub_sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Coral", "Seawater"),
+         labels = c("WMS","G. elegans", "VH Coral","Seawater"))
+
+# Plotting the NMDS for samples
+summer_incub_plot.nmds.samps <- 
+  ggplot(data = summer_incub_sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(fill = Experiment_Other), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  # labs(caption=paste("Bacteria ASV - Stress =", round(digits = 3, summer_trans_incub.mds$stress))) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(
+    legend.position = "right", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE)
+
+
+# Plotting the NMDS for taxa
+summer_incub_plot.nmds.taxa <- 
+  ggplot(data = summer_incub_taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_blank(),
+    title = element_blank()
+  )
+
+# Filtering to just leave the top 20 taxa from bubble plot
+summer_incub_list_bubble <- incub_summer_molten2[ , 6, drop = FALSE] %>% 
+  unique() %>% as.list() %>% unlist()
+summer_incub_top20.taxa.treat.df <- summer_incub_taxa.treat.df %>% filter(X %in% summer_incub_list_bubble)
+
+# Plotting the NMDS for taxa (top 20)
+summer_incub_plot.nmds.taxa.top20 <- 
+  ggplot(data = summer_incub_top20.taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point(aes(fill = phylum), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set2") +
+  theme(
+    legend.position = "right",
+    legend.margin = margin(t = 0, unit = "cm"),    
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    axis.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_blank(),
+    axis.title = element_blank()
+  )
+
+(summer_incub_plot.nmds.samps + summer_incub_plot.nmds.taxa.top20) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/summer_incubation_nmds_plot.png", height = 4, width = 8)
+
+#############################################
+
+####### PERMANOVA & Pairwise PERMANOVA for Incubation (both experiments) #######
+
+# PERMANOVA using distance matrix
+adonis2(summer_trans_incub_matrix ~ Experiment_Other*Incub_Time, method = "bray",
+        data = physeq_summer_incub.metadata.df,permutations = 9999)
+
+# Pairwise PERMANOVA
+pairwise.adonis2(summer_trans_incub_matrix ~ Experiment_Other*Incub_Time, data = physeq_summer_incub.metadata.df, nperm = 9999)
+
+
+
+```
+
+```{r Bact consortia analysis - Incubation - Only Winter}
+
+# Changing from relative abundance to absolute abundance
+physeq_main_n <- normalize(physeq_main, method = "none")
+physeq_incub_winter_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Winter")
+physeq_incub_winter_n_matrix = as(otu_table(physeq_incub_winter_n), "matrix")
+
+####### NMDS for FIELD (both seasons) #######
+winter_trans_incub_matrix <- sqrt(t(physeq_incub_winter_n_matrix))
+winter_trans_incub.mds <- metaMDS(winter_trans_incub_matrix, distance = "bray", autotransform = FALSE)
+winter_trans_incub.treat <- data.frame(species = winter_trans_incub.mds$species) %>%
+  rownames_to_column(var = "species")
+winter_incub.treat <- data.frame(sample = rownames(winter_trans_incub_matrix), winter_trans_incub.mds$points)
+
+# Binding point and taxa labels
+ASVlist <- winter_trans_incub.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+winter_trans_incub.treat <- winter_trans_incub.treat %>% filter(species %in% ASVlist)
+winter_incub.taxa <- read.csv("bubble_plot_data/export_phyloseq/incub/incub_winter_bubble_taxa.csv") %>% filter(X %in% ASVlist)
+winter_incub_taxa.treat.df <- cbind.data.frame(winter_trans_incub.treat,winter_incub.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+physeq_winter_incub.metadata <- as(sample_data(physeq_incub_winter_n), "matrix") 
+physeq_winter_incub.metadata.df = as.data.frame(physeq_winter_incub.metadata)
+
+# Binding point and metadata labels
+winter_incub_sample.labels.df <- cbind.data.frame(physeq_winter_incub.metadata.df, winter_incub.treat) 
+
+# Renaming and ordering factors
+winter_incub_sample.labels.df$Experiment_Other <- 
+  factor(winter_incub_sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Coral", "Seawater"),
+         labels = c("WMS","G. elegans", "VH Coral","Seawater"))
+
+# Plotting the NMDS for samples
+winter_incub_plot.nmds.samps <- 
+  ggplot(data = winter_incub_sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(fill = Experiment_Other), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set1") +
+  # labs(caption=paste("Bacteria ASV - Stress =", round(digits = 3, winter_trans_incub.mds$stress))) +
+  theme(
+    legend.position = "right", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE)
+
+# Plotting the NMDS for taxa
+winter_incub_plot.nmds.taxa <- 
+  ggplot(data = winter_incub_taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_blank(),
+    title = element_blank()
+  )
+    
+
+# Filtering to just leave the top 20 taxa from bubble plot
+winter_incub_list_bubble <- incub_winter_molten2[ , 6, drop = FALSE] %>% 
+  unique() %>% as.list() %>% unlist()
+winter_incub_top20.taxa.treat.df <- winter_incub_taxa.treat.df %>% filter(X %in% winter_incub_list_bubble)
+
+# Plotting the NMDS for taxa (top 20)
+winter_incub_plot.nmds.taxa.top20 <- 
+  ggplot(data = winter_incub_top20.taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = phylum)) +
+  geom_point(aes(fill = phylum), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette="Set2") +
+  theme(
+    legend.position = "right",
+    legend.margin = margin(t = 0, unit = "cm"),    
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    axis.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_blank(),
+    axis.title = element_blank()
+  )
+
+(winter_incub_plot.nmds.samps + winter_incub_plot.nmds.taxa.top20) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/winter_incubation_nmds_plot.png", height = 4, width = 8)
+
+#############################################
+
+####### PERMANOVA & Pairwise PERMANOVA for Incubation (both experiments) #######
+# We can use the previously made metaMDS to get the distances
+# And the previously retrieved metadata -> physeq_winter_incub.metadata.df
+
+# PERMANOVA using distance matrix
+adonis2(winter_trans_incub_matrix ~ Experiment_Other*Incub_Time, method = "bray",
+        data = winter_incub_sample.labels.df, p.adjust = "bonferonni",permutations = 9999)
+
+# Pairwise PERMANOVA
+pairwise.adonis2(winter_trans_incub_matrix ~ Experiment_Other, data = winter_incub_sample.labels.df,p.adjust = "bonferonni", nperm = 9999)
+```
+################################################################
+
+## Bacterial pathway analysis - from PiCRUSt2 w/ MetaCyc pathways
+
+# PICRUSt2 Field nMDS & PERMANOVA
+```{r PiCrust2 analysis - Field}
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+
+picrust_field <- ps_filter(picrust_physeq,Environment_plus == "Field" & SampleID != "WSt3.WMS") %>%
+  ps_filter(Experiment_Season != "Disease_Winter")
+
+#removing chlorphyll & mitochondrial pathways
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531")
+goodTaxa <- setdiff(taxa_names(picrust_field), badTaxa)
+picrust_field <- prune_taxa(goodTaxa, picrust_field)
+
+picrust_field_matrix = as(otu_table(picrust_field), "matrix")
+
+####### NMDS for FIELD (both seasons) #######
+trans_picrust_field_matrix <- sqrt(t(picrust_field_matrix))
+trans_picrust_field.mds <- metaMDS(trans_picrust_field_matrix, distance = "bray", autotransform = FALSE)
+trans_picrust_field.treat <- data.frame(species = trans_picrust_field.mds$species) %>%
+  rownames_to_column(var = "species")
+picrustfield.treat <- data.frame(sample = rownames(trans_picrust_field_matrix), trans_picrust_field.mds$points)
+
+# Making taxa file -> binding point and taxa labels
+ASVlist <- trans_picrust_field.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+trans_picrust_field.treat <- trans_picrust_field.treat %>% filter(species %in% ASVlist)
+
+picrust_field_taxa_matrix = as(tax_table(picrust_field), "matrix")
+picrust_field_taxa_df = as.data.frame(picrust_field_taxa_matrix) #df coercion
+write.csv(picrust_field_taxa_df, file = "picrust2_output/taxa_files/picrust_field_taxa.csv")
+
+picrust_field.taxa <- read.csv("picrust2_output/taxa_files/picrust_field_taxa.csv") %>% filter(X %in% ASVlist)
+picrust_field_taxa.treat.df <- cbind.data.frame(trans_picrust_field.treat,picrust_field.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+picrust_field.metadata <- as(sample_data(picrust_field), "matrix") 
+picrust_field.metadata.df = as.data.frame(picrust_field.metadata)
+
+# Binding point and metadata labels
+picrust_field_sample.labels.df <- cbind.data.frame(picrust_field.metadata.df, picrustfield.treat) %>%
+  filter(Experiment_Season != "Disease_Winter")
+
+picrust_field_sample.labels.df$Experiment_Other <- 
+  factor(picrust_field_sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Sediment","Coral", "Seawater"),
+         labels = c("WMS","G. elegans", "Sediment", "VH Coral","Seawater"),
+         ordered = TRUE)
+
+# Plotting the NMDS for samples
+plot.nmds.samps_picrustfield <- 
+  ggplot(data = picrust_field_sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(x = MDS1, y = MDS2, color = Experiment_Other, fill = Experiment_Other, shape = Season), size=1) +
+  scale_shape_manual(values=c(1, 9))+
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1") +
+  # labs(caption=paste("Bacteria pathways - Stress =", round(digits = 3, trans_picrust_field.mds$stress))) +
+  theme(
+    legend.position = "none", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE)
+
+
+# Plotting the NMDS for taxa
+plot.nmds.taxa_picrustfield <- 
+  ggplot(data = picrust_field_taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = Picrust_description)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "none",
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank()
+  )
+
+plot.nmds.samps_picrustfield/plot.nmds.taxa_picrustfield
+
+
+#############################################
+
+####### PERMANOVA & Pairwise PERMANOVA for Incubation (both experiments) #######
+
+# And the previously retrieved metadata -> physeq_summer_incub.metadata.df
+
+
+# PERMANOVA using distance matrix
+adonis2(trans_picrust_field_matrix ~ Experiment_Other*Season, method = "bray",
+        data = picrust_field_sample.labels.df, p.adjust = "bonferonni",permutations = 9999)
+
+# Pairwise PERMANOVA
+pairwise.adonis2(trans_picrust_field_matrix ~ Experiment_Other*Season, data = picrust_field_sample.labels.df, p.adjust = "bonferonni", nperm = 9999)
+```
+
+# PICRUSt2 Incubation nMDS & PERMANOVA
+```{r PiCrust2 analysis - Summer Incubation}
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+
+picrust_incub <- ps_filter(picrust_physeq, Season == "Summer" & Incubation == TRUE & Experiment != "Seawater")
+
+#removing chlorphyll & mitochondrial pathways
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531","PWY-7663")
+goodTaxa <- setdiff(taxa_names(picrust_incub), badTaxa)
+picrust_incub <- prune_taxa(goodTaxa, picrust_incub)
+
+picrust_incub_matrix = as(otu_table(picrust_incub), "matrix") 
+
+####### NMDS for FIELD (both seasons) #######
+trans_picrust_incub_matrix <- sqrt(t(picrust_incub_matrix))
+trans_picrust_incub.mds <- metaMDS(trans_picrust_incub_matrix, distance = "bray", autotransform = FALSE)
+trans_picrust_incub.treat <- data.frame(species = trans_picrust_incub.mds$species) %>%
+  rownames_to_column(var = "species")
+picrustincub.treat <- data.frame(sample = rownames(trans_picrust_incub_matrix), trans_picrust_incub.mds$points)
+
+# Making taxa file -> binding point and taxa labels
+ASVlist <- trans_picrust_incub.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+trans_picrust_incub.treat <- trans_picrust_incub.treat %>% filter(species %in% ASVlist)
+
+picrust_incub_taxa_matrix = as(tax_table(picrust_incub), "matrix")
+picrust_incub_taxa_df = as.data.frame(picrust_incub_taxa_matrix) #df coercion
+write.csv(picrust_incub_taxa_df, file = "picrust2_output/taxa_files/picrust_incub_taxa.csv")
+
+picrust_incub.taxa <- read.csv("picrust2_output/taxa_files/picrust_incub_taxa.csv") %>% filter(X %in% ASVlist)
+picrust_incub_taxa.treat.df <- cbind.data.frame(trans_picrust_incub.treat,picrust_incub.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+picrust_incub.metadata <- as(sample_data(picrust_incub), "matrix") 
+picrust_incub.metadata.df = as.data.frame(picrust_incub.metadata)
+
+# Binding point and metadata labels
+picrust_incub_sample.labels.df <- cbind.data.frame(picrust_incub.metadata.df, picrustincub.treat)
+
+# Renaming and ordering factors
+picrust_incub_sample.labels.df$Experiment_Other <- 
+  factor(picrust_incub_sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Coral"),
+         labels = c("WMS","G. elegans", "VH Coral"))
+
+# Plotting the NMDS for samples
+Splot.nmds.samps_picrustincub <- 
+  ggplot(data = picrust_incub_sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(fill = Experiment_Other), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set1") +
+  # labs(caption=paste("Bacteria pathways - Stress =", round(digits = 3, trans_picrust_incub.mds$stress))) +
+  theme(
+    legend.position = "right", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE)
+
+# Plotting the NMDS for taxa
+Splot.nmds.taxa_picrustincub <- 
+  ggplot(data = picrust_incub_taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = Picrust_description)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_blank()
+  )
+
+(Splot.nmds.samps_picrustincub+Splot.nmds.taxa_picrustincub)+plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/summerpicrust_incub_nmds_plot.png", height = 4, width = 8)
+#############################################
+
+####### PERMANOVA & Pairwise PERMANOVA for Incubation (both experiments) #######
+
+adonis2(trans_picrust_incub_matrix ~ Experiment_Other*Incub_Time, method = "bray",
+        data = picrust_incub_sample.labels.df, p.adjust = "bonferonni",permutations = 9999)
+# Beta-dispersion check
+
+# Pairwise PERMANOVA
+pairwise.adonis2(trans_picrust_incub_matrix ~ Experiment_Other*Incub_Time, data = picrust_incub_sample.labels.df, p.adjust = "bonferonni", nperm = 9999)
+
+######################
+# Summer only
+# picrust_incub_n <- normalize(picrust_incub, method = "TSS")
+# 
+# physeq_incub_summer_n_matrix = as(otu_table(picrust_incub_n), "matrix") # matrix
+# physeq_incub_summer_n_df = as.data.frame(physeq_incub_summer_n_matrix) #df coercion
+# write.csv(physeq_incub_summer_n_df, file = "bubble_plot_data/export_phyloseq/incub/PICRUSt_incub_summer_bubble_samps.csv")
+# 
+# physeq_incub_summer_taxa_matrix = as(tax_table(picrust_incub), "matrix")
+# physeq_incub_summer_taxa_df = as.data.frame(physeq_incub_summer_taxa_matrix) #df coercion
+# write.csv(physeq_incub_summer_taxa_df, file = "bubble_plot_data/export_phyloseq/incub/PICRUSt_incub_summer_bubble_taxa.csv")
+```
+
+
+
+```{r PiCrust2 analysis - Winter Incubation}
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+
+
+picrust_incub <- ps_filter(picrust_physeq, Season == "Winter" & Incubation == TRUE)
+
+#removing chlorphyll & mitochondrial pathways
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531", "PWY-7663")
+goodTaxa <- setdiff(taxa_names(picrust_incub), badTaxa)
+picrust_incub <- prune_taxa(goodTaxa, picrust_incub)
+
+picrust_incub_matrix = as(otu_table(picrust_incub), "matrix") 
+
+####### NMDS for FIELD (both seasons) #######
+trans_picrust_incub_matrix <- sqrt(t(picrust_incub_matrix))
+trans_picrust_incub.mds <- metaMDS(trans_picrust_incub_matrix, distance = "bray", autotransform = FALSE)
+trans_picrust_incub.treat <- data.frame(species = trans_picrust_incub.mds$species) %>%
+  rownames_to_column(var = "species")
+picrustincub.treat <- data.frame(sample = rownames(trans_picrust_incub_matrix), trans_picrust_incub.mds$points)
+
+# Making taxa file -> binding point and taxa labels
+ASVlist <- trans_picrust_incub.treat %>% dplyr::select(1) %>% as.list() %>% flatten()
+trans_picrust_incub.treat <- trans_picrust_incub.treat %>% filter(species %in% ASVlist)
+
+picrust_incub_taxa_matrix = as(tax_table(picrust_incub), "matrix")
+picrust_incub_taxa_df = as.data.frame(picrust_incub_taxa_matrix) #df coercion
+write.csv(picrust_incub_taxa_df, file = "picrust2_output/taxa_files/picrust_incub_taxa.csv")
+
+picrust_incub.taxa <- read.csv("picrust2_output/taxa_files/picrust_incub_taxa.csv") %>% filter(X %in% ASVlist)
+picrust_incub_taxa.treat.df <- cbind.data.frame(trans_picrust_incub.treat,picrust_incub.taxa) %>% select(1:6)
+
+# Metadata retrieval from phyloseq object
+picrust_incub.metadata <- as(sample_data(picrust_incub), "matrix") 
+picrust_incub.metadata.df = as.data.frame(picrust_incub.metadata)
+
+# Binding point and metadata labels
+picrust_incub_sample.labels.df <- cbind.data.frame(picrust_incub.metadata.df, picrustincub.treat)
+
+# Renaming and ordering factors
+picrust_incub_sample.labels.df$Experiment_Other <- 
+  factor(picrust_incub_sample.labels.df$Experiment_Other, 
+         levels = c("Disease", "Gelidium", "Coral", "Seawater"),
+         labels = c("WMS","G. elegans", "VH Coral","Seawater"))
+
+# Plotting the NMDS for samples
+Wplot.nmds.samps_picrustincub <- 
+  ggplot(data = picrust_incub_sample.labels.df, aes(x = MDS1, y = MDS2, fill = Experiment_Other)) +
+  geom_point(aes(fill = Experiment_Other), colour="black",pch=21, size=1) +
+  theme_pubr() +
+  scale_fill_brewer(palette = "Set1") +
+  # labs(caption=paste("Bacteria pathways - Stress =", round(digits = 3, trans_picrust_incub.mds$stress))) +
+  theme(
+    legend.position = "right", 
+    legend.box.background = element_rect(fill = "transparent", linetype = "blank"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(.5, "line"),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) + stat_chull(aes(fill = Experiment_Other), alpha = 0.1, geom ="polygon", show.legend = FALSE)
+
+# Plotting the NMDS for taxa
+Wplot.nmds.taxa_picrustincub <- 
+  ggplot(data = picrust_incub_taxa.treat.df, aes(x = species.MDS1, y = species.MDS2, color = Picrust_trait)) +
+  geom_point() +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_blank() 
+  )
+
+(Wplot.nmds.samps_picrustincub+Wplot.nmds.taxa_picrustincub)+plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/winterpicrust_incub_nmds_plot.png", height = 4, width = 8)
+
+#############################################
+
+####### PERMANOVA & Pairwise PERMANOVA for Incubation (both experiments) #######
+# We can use the previously made metaMDS to get the distances
+
+# And the previously retrieved metadata -> physeq_summer_incub.metadata.df
+
+
+# PERMANOVA using distance matrix
+adonis2(trans_picrust_incub_matrix ~ Experiment_Other*Incub_Time, method = "bray",
+        data = picrust_incub_sample.labels.df, p.adjust = "bonferonni",permutations = 9999)
+
+# Pairwise PERMANOVA
+pairwise.adonis2(trans_picrust_incub_matrix ~ Experiment_Other, data = picrust_incub_sample.labels.df, p.adjust = "bonferonni", nperm = 9999)
+```
+
+##Figure combining and annotations
+
+```{r Figure Production, fig.width = 10, fig.height = 6}
+#Figures it's easier to edit/combine figures within another chunk rather than play around within others
+
+plot.nmds.samps
+summer_incub_plot.nmds.samps
+winter_incub_plot.nmds.samps
+
+
+plot.nmds.samps_picrustfield
+Splot.nmds.samps_picrustincub
+Wplot.nmds.samps_picrustincub
+
+
+
+
+## Summer Incubation NMDS
+(summer_incub_plot.nmds.samps + summer_incub_plot.nmds.taxa.top20) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/summer_incubation_nmds_plot.png", height = 4, width = 8)
+
+## Winter Incubation NMDS
+(winter_incub_plot.nmds.samps + winter_incub_plot.nmds.taxa.top20) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/winter_incubation_nmds_plot.png", height = 4, width = 8)
+
+## Combination of the two incubation experiment NDMSs (Note - it came out a bit confusing...)
+(summer_incub_plot.nmds.samps + summer_incub_plot.nmds.taxa.top20)/(winter_incub_plot.nmds.samps + winter_incub_plot.nmds.taxa.top20) +plot_annotation(tag_levels = "A")
+
+(summer_incub_plot.nmds.samps + summer_incub_plot.nmds.taxa.top20 + summer_bubble) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/combined_plots/summernMDS_raASV.png", height = 4, width = 11)
+
+(winter_incub_plot.nmds.samps + winter_incub_plot.nmds.taxa.top20 + winter_bubble) +plot_annotation(tag_levels = "A")
+ggsave("all_figures/combined_plots/winternMDS_raASV.png", height = 4, width = 11)
+
+## PICRUSt2 Incubation Summer NMDS
+(Splot.nmds.samps_picrustincub+Splot.nmds.taxa_picrustincub)+plot_annotation(tag_levels = "A")
+ggsave("all_figures/nmds_plots/summerpicrust_incub_nmds_plot.png", height = 4, width = 8)
+
+## PICRUSt2 Incubation Winter NMDS
+# (Wplot.nmds.samps_picrustincub+Wplot.nmds.taxa_picrustincub)+plot_annotation(tag_levels = "A")
+# ggsave("all_figures/nmds_plots/winterpicrust_incub_nmds_plot.png", height = 4, width = 8)
+# 
+# (Wplot.nmds.samps_picrustincub+Splot.nmds.samps_picrustincub) +plot_annotation(tag_levels = "A")
+# ggsave("all_figures/nmds_plots/Summer&Winter_picrust_incub_nmds_plot.png", height = 3, width = 6)
+# 
+# (summer_bubble|(summer_incub_plot.nmds.samps/Splot.nmds.samps_picrustincub)) +plot_annotation(tag_levels = "A") + plot_layout(guides = "collect")
+# ggsave("all_figures/combined_plots/summer_full.png", height = 4, width = 10)
+# 
+# (winter_bubble|(winter_incub_plot.nmds.samps/Wplot.nmds.samps_picrustincub)) +plot_annotation(tag_levels = "A") + plot_layout(guides = "collect")
+# ggsave("all_figures/combined_plots/winter_full.png", height = 4, width = 10)
+
+
+((summer_bubble) + (summer_incub_plot.nmds.samps/Splot.nmds.samps_picrustincub)) + 
+  plot_annotation(tag_levels = "A") + 
+  plot_layout(guides = 'collect') & theme(
+    legend.position = 'right', legend.direction = "vertical", legend.box = "vertical")
+ggsave("all_figures/combined_plots/summer_incub_full.png", height = 6, width = 10)
+
+((winter_bubble) + (winter_incub_plot.nmds.samps/Wplot.nmds.samps_picrustincub)) + 
+  plot_annotation(tag_levels = "A") + 
+  plot_layout(guides = 'collect') & theme(
+    legend.position = 'right', legend.direction = "vertical", legend.box = "vertical")
+ggsave("all_figures/combined_plots/winter_incub_full.png", height = 6, width = 10)
+
+((field_sumwin_bubble) + (plot.nmds.samps/plot.nmds.samps_picrustfield)) + 
+  plot_annotation(tag_levels = "A") + 
+  plot_layout(guides = 'collect') & theme(
+    legend.position = 'right', legend.direction = "vertical", legend.box = "vertical")
+ggsave("all_figures/combined_plots/field_full.png", height = 6, width = 10)
+
+```
+
+
+## MVABUND MANYGLM
+```{r alt test_mvabund manyglm, eval=FALSE, include=FALSE}
+## Field
+# Bacterial ASV taxon abundance
+library(mvabund)
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_field_n <- ps_filter(physeq_main_n, Environment_plus == "Field" & Experiment_Season != c("Disease_Winter"))
+physeq_field_n_matrix = sqrt(t(as(otu_table(physeq_field_n), "matrix")))
+
+physeq_field.metadata <- as(sample_data(physeq_field_n), "matrix") 
+physeq_field.metadata.df = as.data.frame(physeq_field.metadata)
+
+mgml1 <- manyglm(physeq_field_n_matrix ~ physeq_field.metadata.df$Experiment_Other*physeq_field.metadata.df$Season, 
+         family = "negative_binomial")
+anova(mgml1)
+#anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_field.metadata.df$Experiment_Other)
+
+# Bacterial pathway abundance
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+picrust_field <- ps_filter(picrust_physeq,Environment_plus == "Field" & SampleID != "WSt3.WMS") %>%
+  ps_filter(Experiment_Season != "Disease_Winter")  %>% normalize(method = "TSS")
+#removing chlorphyll & mitochondrial pathways
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531")
+goodTaxa <- setdiff(taxa_names(picrust_field), badTaxa)
+picrust_field <- prune_taxa(goodTaxa, picrust_field)
+picrust_field_matrix = as(otu_table(picrust_field), "matrix")
+trans_picrust_field_matrix <- sqrt(t(picrust_field_matrix))
+mgml1 <- manyglm(trans_picrust_field_matrix ~ physeq_field.metadata.df$Experiment_Other*physeq_field.metadata.df$Season, 
+         family = "negative_binomial")
+anova(mgml1)
+#anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_field.metadata.df$Experiment_Other)
+
+
+## Winter Incub
+# Bacterial ASV taxon abundance
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_incub_winter_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Winter")
+physeq_incub_winter_n_matrix = sqrt(t(as(otu_table(physeq_incub_winter_n), "matrix")))
+
+physeq_winter_incub.metadata <- as(sample_data(physeq_incub_winter_n), "matrix") 
+physeq_winter_incub.metadata.df = as.data.frame(physeq_winter_incub.metadata)
+
+mgml1 <- manyglm(physeq_incub_winter_n_matrix ~ physeq_winter_incub.metadata.df$Experiment_Other, 
+         family = "negative_binomial")
+anova(mgml1)
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_winter_incub.metadata.df$Experiment_Other)
+
+# Bacterial pathway abundance
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+picrust_incub <- ps_filter(picrust_physeq, Season == "Winter" & Incubation == TRUE) %>% normalize(method = "TSS")
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531", "PWY-7663")
+goodTaxa <- setdiff(taxa_names(picrust_incub), badTaxa)
+picrust_incub <- prune_taxa(goodTaxa, picrust_incub)
+picrust_incub_matrix = as(otu_table(picrust_incub), "matrix") 
+trans_picrust_incub_matrix <- sqrt(t(picrust_incub_matrix))
+
+mgml1 <- manyglm(trans_picrust_incub_matrix ~ physeq_winter_incub.metadata.df$Experiment_Other, 
+         family = "negative_binomial")
+anova(mgml1)
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_winter_incub.metadata.df$Experiment_Other)
+
+## Summer Incub
+# Bacterial ASV taxon abundance
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_incub_summer_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Summer")
+physeq_incub_summer_n_matrix = sqrt(t(as(otu_table(physeq_incub_summer_n), "matrix")))
+
+physeq_summer_incub.metadata <- as(sample_data(physeq_incub_summer_n), "matrix") 
+physeq_summer_incub.metadata.df = as.data.frame(physeq_summer_incub.metadata)
+
+mgml1 <- manyglm(physeq_incub_summer_n_matrix ~ physeq_summer_incub.metadata.df$Experiment_Other*physeq_summer_incub.metadata.df$Incub_Time, 
+         family = "negative_binomial")
+anova(mgml1)
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_summer_incub.metadata.df$Experiment_Other)
+
+# Bacterial pathway abundance
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+picrust_incub <- ps_filter(picrust_physeq, Season == "Summer" & Incubation == TRUE) %>% normalize(method = "TSS")
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531","PWY-7663")
+goodTaxa <- setdiff(taxa_names(picrust_incub), badTaxa)
+picrust_incub <- prune_taxa(goodTaxa, picrust_incub)
+picrust_incub_matrix = as(otu_table(picrust_incub), "matrix") 
+trans_picrust_incub_matrix <- sqrt(t(picrust_incub_matrix))
+mgml1 <- manyglm(trans_picrust_incub_matrix ~ physeq_summer_incub.metadata.df$Experiment_Other*physeq_summer_incub.metadata.df$Incub_Time, 
+         family = "negative_binomial")
+anova(mgml1)
+anova.manyglm(mgml1, pairwise.comp = physeq_summer_incub.metadata.df$Experiment_Other)
+
+
+```
+
+
+## UNUSED TESTS - SIMPER TEST
+```{r SIMPER - Incubation - Only Summer, eval=FALSE, include=FALSE}
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_incub_summer_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Summer")
+physeq_incub_summer_n_matrix = as(otu_table(physeq_incub_summer_n), "matrix")
+summer_simpers.df <- cbind.data.frame(physeq_summer_incub.metadata.df, t(physeq_incub_summer_n_matrix))
+
+simper_list <- simper(summer_simpers.df[14:590], summer_simpers.df$Experiment_Other)
+temp <- as.data.frame(simper_list$Gelidium_Disease) %>% filter(p > .99)
+ggplot(temp, aes(x = species, y = p)) + geom_boxplot()
+
+###
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_incub_summer_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Summer")
+physeq_incub_summer_n_matrix = as(otu_table(physeq_incub_summer_n), "matrix") %>% sqrt()
+summer_trans_incub.dist <- vegdist(t(summer_trans_incub_matrix), method = "bray")
+# And the previously retrieved metadata -> physeq_summer_incub.metadata.df
+
+# PERMANOVA using distance matrix
+adonis2(summer_trans_incub.dist ~ Experiment_Other*Incub_Time, method = "bray",
+        data = physeq_summer_incub.metadata.df, p.adjust = "bonferonni",permutations = 9999)
+# Beta-dispersion check
+beta <- betadisper(summer_trans_incub.dist, physeq_summer_incub.metadata.df$Experiment_Other)
+permutest(beta, permutations = 9999)
+# Pairwise PERMANOVA
+pairwise.adonis2(summer_trans_incub.dist ~ Experiment_Other*Incub_Time, data = physeq_summer_incub.metadata.df, p.adjust = "bonferonni", nperm = 9999)
+
+anosim(t(summer_trans_incub.dist), grouping = physeq_summer_incub.metadata.df$Experiment_Other, permutations = 9999, distance = "bray", strata = physeq_summer_incub.metadata.df$Experiment_Other)
+
+
+
+library(mvabund)
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_field_n <- ps_filter(physeq_main_n, Environment_plus == "Field" & Experiment_Season != c("Disease_Winter"))
+physeq_field_n_matrix = sqrt(t(as(otu_table(physeq_field_n), "matrix")))
+
+
+
+
+mgml1 <- manyglm(physeq_field_n_matrix ~ physeq_field.metadata.df$Experiment_Other*physeq_field.metadata.df$Season, 
+         family = "negative_binomial")
+
+anova(mgml1)
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_field.metadata.df$Experiment_Other)
+
+
+#################
+physeq_main_n <- normalize(physeq_main, method = "TSS")
+physeq_incub_summer_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season == "Summer")
+physeq_incub_summer_n_matrix = sqrt(t(as(otu_table(physeq_incub_summer_n), "matrix")))
+#physeq_incub_summer_n_matrix[physeq_incub_summer_n_matrix > 0] <- 1
+#physeq_incub_summer_n_matrix <- log(physeq_incub_summer_n_matrix + 1) 
+
+
+# physeq_incub_summer_n_matrix[physeq_incub_summer_n_matrix > 0] <- 1
+
+
+mgml1 <- manyglm(physeq_incub_summer_n_matrix ~ physeq_summer_incub.metadata.df$Experiment_Other*physeq_summer_incub.metadata.df$Incub_Time, 
+         family = "negative_binomial")
+
+anova(mgml1)
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_summer_incub.metadata.df$Experiment_Other)
+
+################
+
+mgml1 <- manyglm(physeq_incub_summer_n_matrix ~ physeq_summer_incub.metadata.df$Experiment_Other, 
+         family = "negative_binomial")
+
+anova.manyglm(mgml1, p.uni = "adjusted", pairwise.comp = physeq_summer_incub.metadata.df$Experiment_Other)
+
+
+
+## looking at picrust results
+picrust_physeq <- import_picrust2("picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531")
+goodTaxa <- setdiff(taxa_names(picrust_physeq), badTaxa)
+picrust_physeqX <- prune_taxa(goodTaxa, picrust_physeq)
+
+x <- ps_melt(picrust_physeqX) %>%
+  group_by(Experiment_Other, Picrust_description) %>%
+  summarise(mean = mean(Abundance), sd = sd(Abundance))
+
+
+
+```
+
+```{r Bubble Plot - Field - Season Sep_Summer, eval=FALSE, include=FALSE}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/field/SUMfield_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/field/SUMfield_bubble_taxa.csv"
+
+replicates_groups <- c("Coral_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Disease_Summer",	"Gelidium_Summer",	"Sediment_Summer",	"Seawater_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer",	"Coral_Summer",	"Gelidium_Summer",	"Disease_Summer")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("F07.20.COR",	"F07.20.GEL",	"F07.20.SED",	"F07.20.WMS",	"F07.21.COR",	"F07.21.GEL",	"F07.21.SED",	"F07.21.WAT",	"F09.21.GEL",	"F09.21.SED",	"F09.21.WAT",	"F09.21.WMS",	"F10.20.GEL",	"F10.20.SED",	"F10.20.WAT",	"F10.20.WMS",	"SSt1.1A.COR",	"SSt1.1A.GEL",	"SSt1.WMS",	"SSt2.1B.COR",	"SSt2.1B.GEL",	"SSt2.WMS",	"SSt3.1C.COR",	"SSt3.1C.GEL",	"SSt3.WMS",	"SSt4.1D.COR",	"SSt4.1D.GEL",	"SSt4.WMS",	"SSt5.2C.COR",	"SSt5.2C.GEL",	"SSt5.WMS",	"SSt6.2D.COR",	"SSt6.2D.GEL",	"SSt6.WMS",	"WSt3.1A.06.GEL",	"WSt3.2C.COR")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "field_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+field_all_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+field_all_labelled_noOther <- field_all_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Season = case_when(
+    endsWith(sample, "Winter") ~ "Winter",
+    endsWith(sample, "Summer") ~ "Summer"))
+field_all_labelled_noOther$sample <- factor(field_all_labelled_noOther$sample, 
+                                            levels = c("Disease_Summer", "Coral_Summer", "Gelidium_Summer", "Sediment_Summer", "Seawater_Summer"),
+                                                          labels = c("WMS\n(Summer, N = 9)",
+  "VH coral\n(Summer, N = 8)", "G. elegans\n(Summer, N = 10)",
+  "Sediment\n(Summer, N = 4)",  "Seawater\n(Summer, N = 3)"), ordered = TRUE)
+#######################################
+taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+fieldsummer_labelled_famspecies <- merge(field_all_labelled_noOther, taxa_match, 
+                                          by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+
+############ bubble plot ############
+summer_bubble_field <- 
+  ggplot(fieldsummer_labelled_famspecies,aes(sample,tax_bin)) +
+    geom_point(aes(size=mean+sd), shape=16, alpha = 0.5, color = "black", ) + 
+    geom_point(aes(size=mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Paired", name="Taxonomic clade") +
+    scale_size(name = "Relative\nabundance") +
+  theme_pubr() +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 5),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 6),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.text.x = element_text(size = 8)
+  )  +
+  facet_grid(cols = vars(Season), scales = "free")
+ggsave("all_figures/bubble_plots/summer_field_bubble_plot.png", width = 7, height = 5)
+#####################################
+
+```
+
+```{r Bubble Plot - Field - Season Sep_Winter, eval=FALSE, include=FALSE}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/field/WINfield_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/field/WINfield_bubble_taxa.csv"
+
+replicates_groups <- c("Gelidium_Winter",	"Seawater_Winter",	"Gelidium_Winter",	"Sediment_Winter",	"Seawater_Winter", "Gelidium_Winter",	"Coral_Winter",	"Gelidium_Winter",	"Coral_Winter",	"Gelidium_Winter",	"Coral_Winter")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("F01.21.GEL",	"F01.21.WAT",	"F04.21.GEL",	"F04.21.SED",	"F04.21.WAT",	"WSt1.1A.04.GEL",	"WSt1.1A.COR", "WSt2.1A.05.GEL",	"WSt2.1C.COR",	"WSt3.1A.06.GEL",	"WSt3.2C.COR")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "phylum"
+file_name <- "field_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+field_all_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+field_all_labelled_noOther <- field_all_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Season = case_when(
+    endsWith(sample, "Winter") ~ "Winter",
+    endsWith(sample, "Summer") ~ "Summer"))
+field_all_labelled_noOther$sample <- factor(field_all_labelled_noOther$sample, 
+                                            levels = c("Coral_Winter", "Gelidium_Winter", "Sediment_Winter", "Seawater_Winter"),
+                                                          labels = c(
+  "VH coral\n(Winter, N = 3)",  "G. elegans\n(Winter, N = 5)",
+  "Sediment\n(Winter, N = 1)",  "Seawater\n(Winter, N = 2)"), ordered = TRUE)
+#######################################
+taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+fieldwinter_labelled_famspecies <- merge(field_all_labelled_noOther, taxa_match, 
+                                          by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+
+############ bubble plot ############
+winter_bubble_field <- ggplot(fieldwinter_labelled_famspecies,aes(sample,tax_bin)) +
+    geom_point(aes(size=mean+sd), shape=16, alpha = 0.5, color = "black", ) + 
+    geom_point(aes(size=mean, fill=tax_col),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Paired", name="Taxonomic clade") +
+    scale_size(name = "Relative\nabundance") +
+  theme_pubr() +
+  theme(
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 5),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 6),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.text.x = element_text(size = 8)
+  )  +
+  facet_grid(cols = vars(Season), scales = "free")
+ggsave("all_figures/bubble_plots/winter_field_bubble_plot.png", width = 7, height = 5)
+#####################################
+
+
+# 
+# x <- ps_melt(physeq_main_n)
+# 
+# write.csv(x, file = "order_tss.csv")
+
+x <- read.csv("misc/flavo_order.csv")
+y <- x %>%
+  group_by(Experiment_Other, Environment_plus) %>%
+  summarise(meanAbund = mean(Abundance), sdAbund = sd(Abundance))
+
+ggplot(y, aes(Experiment_Other, meanAbund, fill = Environment_plus)) +
+  geom_col(position = "dodge")
+
+TukeyHSD(aov(Abundance~Experiment_Other*Environment_plus,data = x))
+```
+
+```{r PiCRUST2 analysis - detailed overlapping groups using ps_venn, eval=FALSE, include=FALSE}
+
+## Field PICRUSt2
+
+z <- normalize(picrust_field, method = "TSS")
+
+field_picrust_venn <- ps_venn(picrust_field, group = "Experiment_Other", plot = FALSE)
+as.vector(field_picrust_venn$Disease__Gelidium__Sediment)
+
+z1 <- ps_melt(z) %>%
+  filter(OTU %in% as.vector(field_picrust_venn$Disease__Gelidium__Sediment)) %>%
+  group_by(Picrust_description, Experiment_Other, OTU) %>%
+  summarise(meanpath = mean(Abundance), sdpath = sd(Abundance), n = n()) %>%
+  filter(Experiment_Other %in% c("Gelidium", "Disease", "Sediment")) %>%
+  mutate(meanpath = 100*round(meanpath, digits = 6)) %>%
+    mutate(sdpath = 100*round(sdpath, digits = 6))
+
+z <- normalize(picrust_field, method = "TSS")
+
+field_picrust_venn <- ps_venn(picrust_field, group = "Experiment_Other", plot = FALSE)
+as.vector(field_picrust_venn$Gelidium)
+
+z1 <- ps_melt(z) %>%
+  filter(OTU %in% as.vector(field_picrust_venn$Gelidium)) %>%
+  group_by(Picrust_description, Experiment_Other, OTU) %>%
+  summarise(meanpath = mean(Abundance), sdpath = sd(Abundance), n = n()) %>%
+  filter(Experiment_Other %in% c("Gelidium")) %>%
+  mutate(meanpath = 100*round(meanpath, digits = 6)) %>%
+    mutate(sdpath = 100*round(sdpath, digits = 6))
+
+write.csv(z1, "SI/SI_Tables/FIELD_gelonlyPICRUSt2.csv")
+
+z1 <- ps_melt(z) %>%
+  filter(OTU %in% as.vector(field_picrust_venn$Gelidium__Sediment)) %>%
+  group_by(Picrust_description, Experiment_Other, OTU) %>%
+  summarise(meanpath = mean(Abundance), sdpath = sd(Abundance), n = n()) %>%
+  filter(Experiment_Other %in% c("Gelidium", "Sediment")) %>%
+  mutate(meanpath = 100*round(meanpath, digits = 6)) %>%
+    mutate(sdpath = 100*round(sdpath, digits = 6))
+
+write.csv(z1, "SI/SI_Tables/FIELD_gelsedPICRUSt2.csv")
+
+#############################################
+
+## Summer Incub PICRUSt2
+
+x <- normalize(picrust_incub, method = "TSS")
+
+summer_picrust_venn <- ps_venn(picrust_incub, group = "Experiment_Other", plot = FALSE)
+as.vector(summer_picrust_venn$Disease__Gelidium)
+
+x1 <- ps_melt(x) %>%
+  filter(OTU %in% as.vector(summer_picrust_venn$Disease__Gelidium)) %>%
+  group_by(Picrust_description, Experiment_Other, OTU) %>%
+  summarise(meanpath = mean(Abundance), sdpath = sd(Abundance), n = n()) %>%
+  filter(Experiment_Other %in% c("Gelidium", "Disease")) %>%
+  mutate(meanpath = 100*round(meanpath, digits = 6)) %>%
+    mutate(sdpath = 100*round(sdpath, digits = 6))
+
+write.csv(x1, "SI/SI_Tables/gel_WMS_sharedPICRUSt2.csv")
+
+x1 <- ps_melt(x) %>%
+  filter(OTU %in% as.vector(summer_picrust_venn$Gelidium)) %>%
+  group_by(Picrust_description, Experiment_Other, OTU) %>%
+  summarise(meanpath = mean(Abundance), sdpath = sd(Abundance), n = n()) %>%
+  filter(Experiment_Other %in% c("Gelidium")) %>%
+  mutate(meanpath = 100*round(meanpath, digits = 6)) %>%
+    mutate(sdpath = 100*round(sdpath, digits = 6))
+
+write.csv(x1, "SI/SI_Tables/gel_WMS_gelonlyPICRUSt2.csv")
+
+```
+
+```{r Bubble Plot - PICRUSt_Summer Incubation, eval=FALSE, include=FALSE}
+
+otu_tab_file <- "bubble_plot_data/export_phyloseq/incub/PICRUSt_incub_summer_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/incub/PICRUSt_incub_summer_bubble_taxa.csv"
+
+replicates_groups <- c("G. elegans",	"G. elegans",	"WMS",	"G. elegans",	"G. elegans",	"Seawater",	"G. elegans",	"WMS",	"WMS",	"WMS",	"G. elegans",	"Seawater",	"Seawater",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS",	"Coral",	"G. elegans",	"WMS")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("sa22",	"sa23",	"sa24",	"sa25",	"sa26",	"sa27",	"sa28",	"sa29",	"sa30",	"sa31",	"sa32",	"sa33",	"sa34",	"sa35",	"sa36",	"sa37",	"sa38",	"sa39",	"sa40",	"sa41",	"sa42",	"sa43",	"sa44",	"sa45",	"sa46",	"sa47",	"sa48",	"sa49",	"sa50",	"sa51",	"sa52")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "Picrust_description"
+file_name <- "incub_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+incub_summer_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+incub_summer_labelled_noOther <- incub_summer_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Time = case_when(
+    grepl("Start", sample, ignore.case = TRUE) ~"Start",
+    grepl("End", sample, ignore.case = TRUE) ~"End"))
+incub_summer_labelled_noOther$sample <- factor(incub_summer_labelled_noOther$sample, levels = c(
+  "WMS", "G. elegans", "Coral", "Seawater"),
+                                                                               labels = c(
+  "WMS\n(Summer, N = 10)","G. elegans\n(Summer, N = 12)", "VH Coral\n(Summer, N =6)","Seawater\n(Summer, N = 3)"), ordered = TRUE)
+#######################################
+# taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+# incub_summer_labelled_famspecies <- merge(incub_summer_labelled_noOther, taxa_match, 
+#                                           by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+  
+
+############ bubble plot ############
+summer_bubble <- 
+  ggplot(incub_summer_labelled_noOther,aes(sample,taxonomy)) +
+    geom_point(aes(size=100*(mean+sd)), shape=16, alpha = 1, color = "grey", ) + 
+    geom_point(aes(size=100*mean, fill=taxonomy),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Set2", name="Taxonomic clade") +
+    scale_size(name = "Relative abundance (%)") +
+  theme_pubr() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 8),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) 
+ggsave("all_figures/bubble_plots/PICRUSt_summeronly_incub_bubble_plot.png", width = 5, height = 4)
+#####################################
+
+
+```
+
+
+## PICRUST FIELD
+```{r}
+picrust_physeq <- import_picrust2("Microbiome/picrust2_output/pathways_out/path_abun_unstrat_descrip.tsv.gz", 
+                      sam_tab = "Microbiome/picrust2_output/2022_metadata_lvl7.txt", trait = "PATHWAY")
+
+picrust_field <- ps_filter(picrust_physeq,Environment_plus == "Field" & SampleID != "WSt3.WMS") %>%
+  ps_filter(Experiment_Season != "Disease_Winter")
+
+#removing chlorphyll & mitochondrial pathways
+badTaxa = c("PWY-3781", "CHLOROPHYLL-SYN", "PWY-5531")
+goodTaxa <- setdiff(taxa_names(picrust_field), badTaxa)
+picrust_field <- prune_taxa(goodTaxa, picrust_field)
+
+
+
+picrust_incub_n <- normalize(picrust_field, method = "TSS")
+
+physeq_incub_summer_n_matrix = as(otu_table(picrust_incub_n), "matrix") # matrix
+physeq_incub_summer_n_df = as.data.frame(physeq_incub_summer_n_matrix) #df coercion
+write.csv(physeq_incub_summer_n_df, file = "bubble_plot_data/export_phyloseq/incub/PICRUSt_field_bubble_samps.csv")
+
+physeq_incub_summer_taxa_matrix = as(tax_table(picrust_incub_n), "matrix")
+physeq_incub_summer_taxa_df = as.data.frame(physeq_incub_summer_taxa_matrix) #df coercion
+write.csv(physeq_incub_summer_taxa_df, file = "bubble_plot_data/export_phyloseq/incub/PICRUSt_field_bubble_taxa.csv")
+
+
+```
+
+
+```{r}
+otu_tab_file <- "bubble_plot_data/export_phyloseq/incub/PICRUSt_field_bubble_samps.csv"
+tax_file <- "bubble_plot_data/export_phyloseq/incub/PICRUSt_field_bubble_taxa.csv"
+
+replicates_groups <- c("Gelidium",	"Seawater",	"Gelidium",	"Sediment",	"Seawater",	"Coral",	"Gelidium",	"Sediment",	"WMS",	"Coral",	"Gelidium",	"Sediment",	"Seawater",	"Gelidium",	"Sediment",	"Seawater",	"WMS",	"Gelidium",	"Sediment",	"Seawater",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Coral",	"Gelidium",	"WMS",	"Gelidium",	"Coral",	"Gelidium",	"Coral",	"Gelidium",	"Coral")
+
+#ALL SAMPLES - Removed WMS Winter
+replicates_list <- c("sa1",	"sa2",	"sa3",	"sa4",	"sa5",	"sa6",	"sa7",	"sa8",	"sa9",	"sa10",	"sa11",	"sa12",	"sa13",	"sa14",	"sa15",	"sa16",	"sa17",	"sa18",	"sa19",	"sa20",	"sa21",	"sa35",	"sa36",	"sa37",	"sa38",	"sa39",	"sa40",	"sa41",	"sa42",	"sa43",	"sa44",	"sa45",	"sa46",	"sa47",	"sa48",	"sa49",	"sa50",	"sa51",	"sa52",	"sa56",	"sa57",	"sa59",	"sa60",	"sa62",	"sa63")
+
+tax_aggr <- "ASV"
+tax_number <- 20 #threshold for how many taxa get displayed; others will be pooled into "other"
+tax_col <- "Picrust_description"
+file_name <- "incub_bubble_plot.svg"
+plot_dim <- c(6,6)
+
+############ BUBBLEPLOTCODE############
+otu_tab <- read.csv(otu_tab_file, header = TRUE, comment.char = "", sep = ",")
+names(otu_tab)[1] <- "ASV"
+tax_tab <- read.csv(tax_file, header = TRUE, comment.char = "", sep = ",", fill = TRUE)
+names(tax_tab)[1] <- "ASV"
+for (col in 2:ncol(tax_tab)) {
+    for (row in 1:nrow(tax_tab)) {
+        if (grepl("uncultured",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}
+        if (grepl("unknown",tax_tab[row,col],ignore.case = TRUE)) {tax_tab[row,col] <- ""}}}
+tax_tab2 <- as.data.frame(apply(tax_tab, 2, function(x) gsub("^$|^ $", NA, x)))
+col_to_remove <- c()
+for (col in 2:ncol(tax_tab2)) {
+    x <- sum(is.na(tax_tab2[,col]))/nrow(tax_tab2)
+    if (x == 1) {col_to_remove <- c(col_to_remove, col)}}
+if (length(col_to_remove) > 0) {tax_tab3 <- tax_tab2[,-col_to_remove]} else {tax_tab3 <- tax_tab2}
+for (col in 2:ncol(tax_tab3)) {tax_tab3[,col] <- as.character(tax_tab3[,col])}
+for (col in 2:ncol(tax_tab3)) {
+    for (row in 1:nrow(tax_tab3)) {
+        if (is.na(tax_tab3[row,col])) {
+            if (!grepl("ASV", tax_tab3[row,col-1]) & !grepl("unassigned", tax_tab3[row,col-1])) {
+                tax_tab3[row,col] <- paste0("unassigned ", tax_tab3[row,col-1])
+            } else {tax_tab3[row,col] <- tax_tab3[row,col-1]}}}}
+otu_counts <- colSums(otu_tab[,-1])
+otu_tab2 <- otu_tab
+otu_tab2[,-1] <- sweep(otu_tab[,-1], 2, otu_counts, `/`)
+otu_tab2[is.na(otu_tab2)] <- 0
+m <- merge(otu_tab2, tax_tab3)
+taxonomy <- c()
+for (row in 1:nrow(m)) {taxonomy <- c(taxonomy, paste0(m[row,names(m)==tax_col], ";", m[row,names(m)==tax_aggr]))}
+m2 <- m[,names(m) %in% replicates_list]
+m3 <- aggregate(m2, by=list(taxonomy), FUN=sum)
+if (tax_number > nrow(m3)) {tax_number <- nrow(m3)}
+m3$average <- rowMeans(m3[,-1])
+m3.sorted <- m3[order(-m3$average),]
+m3.sorted$selection <- rep("discarded", nrow(m3.sorted))
+m3.sorted$selection[1:tax_number] <- "retained"
+m3.sorted$Group.1[m3.sorted$selection == "discarded"] <- "Other;Other"
+m3.sorted$average <- NULL
+m3.sorted$selection <- NULL
+m4 <- aggregate(m3.sorted[,-1], by=list(taxonomy=m3.sorted$Group.1), FUN=sum)
+n <- m4$taxonomy
+m4.t <- as.data.frame(t(m4[,-1]))
+colnames(m4.t) <- n
+m4.t$sample <- rownames(m4.t)
+rownames(m4.t) <- NULL
+m4.t$replicate <- rep(NA, nrow(m4.t))
+for (line in 1:(nrow(m4.t))){m4.t$replicate[line] <- replicates_groups[m4.t$sample[line] == replicates_list]}
+m4.t.mean <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "mean")
+names(m4.t.mean)[1] <- "sample"
+m4.t.sd <- aggregate(m4.t[,1:(ncol(m4.t)-2)], by = list(m4.t$replicate), FUN = "sd")
+names(m4.t.sd)[1] <- "sample"
+molten.mean <- melt(m4.t.mean, id.vars = "sample")
+molten.mean$id <- paste0(molten.mean$sample, "-", molten.mean$variable)
+molten.sd <- melt(m4.t.sd, id.vars = "sample")
+molten.sd$id <- paste0(molten.sd$sample, "-", molten.sd$variable)
+molten <- merge(molten.mean, molten.sd, by.x = "id", by.y = "id")
+molten$id <- NULL
+molten$sample.y <- NULL
+molten$variable.y <- NULL
+names(molten) <- c("sample", "taxonomy", "mean", "sd")
+molten$tax_col <- str_split_fixed(molten$taxonomy, ";", 2)[,1]
+molten$tax_bin <- str_split_fixed(molten$taxonomy, ";", 2)[,2]
+molten <- molten[order(molten$tax_col),]
+tax_levels <- as.character(molten$tax_bin[!duplicated(molten$tax_bin)])
+tax_levels <- tax_levels[tax_levels != "Other"]
+tax_levels <- c(tax_levels, "Other")
+molten$tax_bin <- factor(molten$tax_bin, levels = rev(tax_levels))
+# Remove null values
+incub_summer_molten2 <- molten[molten$mean > 0,]
+##########################
+
+############ Adding labels ############
+incub_summer_labelled_noOther <- incub_summer_molten2 %>%
+  filter(tax_bin != "Other") %>%
+  mutate(Time = case_when(
+    grepl("Start", sample, ignore.case = TRUE) ~"Start",
+    grepl("End", sample, ignore.case = TRUE) ~"End"))
+incub_summer_labelled_noOther$sample <- factor(incub_summer_labelled_noOther$sample,
+  levels = c("WMS", "Gelidium", "Sediment", "Coral", "Seawater"),
+  labels = c("WMS (N = 9)",  "G. elegans (N = 15)", "Sediment (N = 5)", "VH Coral (N = 11)","Seawater (N = 5)"), ordered = TRUE)
+#######################################
+# taxa_match <- read.csv("QIIME2_ASV_data/lvl7_taxa_nochlo.csv") %>% select(1,6,8) %>% mutate(x = paste(family,"-",species)) %>% select(1,4)
+# incub_summer_labelled_famspecies <- merge(incub_summer_labelled_noOther, taxa_match, 
+#                                           by.x = "tax_bin", by.y = "ASV.ID") %>% mutate(tax_bin = paste(x,"-",tax_bin))
+  
+
+############ bubble plot ############
+summer_bubble <- 
+  ggplot(incub_summer_labelled_noOther,aes(sample,taxonomy)) +
+    geom_point(aes(size=100*(mean+sd)), shape=16, alpha = 1, color = "grey", ) + 
+    geom_point(aes(size=100*mean, fill=taxonomy),shape=21,color="black") +
+    theme(panel.grid.major=element_line(linetype=1,color="grey"),
+          axis.text.x=element_text(angle=90,hjust=1,vjust=0),
+          panel.background = element_blank()) +
+    ylab("Taxonomic bins") +
+    scale_fill_brewer(palette="Set2", name="Taxonomic clade") +
+    scale_size(name = "Relative abundance (%)") +
+  theme_pubr() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45,vjust = .9, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(.5, "line"),
+    legend.title = element_text(size = 8),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) 
+ggsave("all_figures/bubble_plots/PICRUSt_field_bubble_plot.png", width = 5, height = 4)
+#####################################
+
+write.csv(incub_summer_labelled_noOther, "SI/picrust_field_abundance.csv")
+```
+
+
+## SIGNIFICANCE 
+
+
+
+Summer
+```{r Summer - PERMANOVA}
+physeq_main_n <- normalize(physeq_trimmed, method = "none") %>% tax_glom("Species")
+physeq_field_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season != "Winter", Experiment != "Seawater")
+physeq_field_n_matrix = as(otu_table(physeq_field_n), "matrix")
+trans_field_matrix <- sqrt(t(physeq_field_n_matrix))
+physeq_field.metadata <- as(sample_data(physeq_field_n), "matrix") 
+physeq_field.metadata.df = as.data.frame(physeq_field.metadata)
+
+adonis2(trans_field_matrix ~ Experiment_Other*Incub_Time, method = "bray", data = physeq_field.metadata.df,  permutations = 9999)
+
+pairwise.adonis2(trans_field_matrix ~ Experiment_Other*Incub_Time,  method = "bray", data = physeq_field.metadata.df, nperm = 9999)
+```
+
+```{r}
+trimmed_picrust
+physeq_main_n <- normalize(trimmed_picrust, method = "none")
+physeq_field_n <- ps_filter(physeq_main_n, Incubation == TRUE & Season != "Winter", Experiment != "Seawater")
+physeq_field_n_matrix = as(otu_table(physeq_field_n), "matrix")
+trans_field_matrix <- sqrt(t(physeq_field_n_matrix))
+physeq_field.metadata <- as(sample_data(physeq_field_n), "matrix") 
+physeq_field.metadata.df = as.data.frame(physeq_field.metadata)
+
+adonis2(trans_field_matrix ~ Experiment_Other*Incub_Time, method = "bray", data = physeq_field.metadata.df, permutations = 9999)
+
+pairwise.adonis2(trans_field_matrix ~ Experiment_Other*Incub_Time,  method = "bray", data = physeq_field.metadata.df, nperm = 9999)
+```
+

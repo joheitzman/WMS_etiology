@@ -1,0 +1,10 @@
+"","Picrust_description","Experiment_Other","OTU","meanpath","sdpath","n"
+"1","L-1,2-propanediol degradation","Disease","PWY-7013",0.0025,0.008,10
+"2","allantoin degradation IV (anaerobic)","Disease","PWY0-41",0.0015,0.0048,10
+"3","enterobacterial common antigen biosynthesis","Disease","ECASYN-PWY",0.0025,0.0077,10
+"4","ketogluconate metabolism","Disease","KETOGLUCONMET-PWY",0.0021,0.0067,10
+"5","sulfoglycolysis","Disease","PWY-7446",0.0013,0.0041,10
+"6","superpathway of L-tryptophan biosynthesis","Disease","PWY-6629",0.0126,0.0399,10
+"7","superpathway of fucose and rhamnose degradation","Disease","FUC-RHAMCAT-PWY",0.0056,0.0115,10
+"8","superpathway of glycol metabolism and degradation","Disease","GLYCOL-GLYOXDEG-PWY",0.002,0.0065,10
+"9","superpathway of lipopolysaccharide biosynthesis","Disease","LPSSYN-PWY",0.0048,0.0151,10

@@ -1,0 +1,131 @@
+"","tax_bin","sample","taxonomy","mean","sd","tax_col","Season","x"
+"1","Vibrionaceae - uncultured_bacterium - ASV108","VH coral
+(Summer, N = 8)","Proteobacteria;ASV108",0.00831910622673003,0.0120150216782047,"Proteobacteria","Summer","Vibrionaceae - uncultured_bacterium"
+"2","Vibrionaceae - uncultured_bacterium - ASV108","Sediment
+(Summer, N = 4)","Proteobacteria;ASV108",0.00620129513774558,0.0124025902754912,"Proteobacteria","Summer","Vibrionaceae - uncultured_bacterium"
+"3","Vibrionaceae - uncultured_bacterium - ASV108","Seawater
+(Summer, N = 3)","Proteobacteria;ASV108",0.030553680681729,0.0265307373196722,"Proteobacteria","Summer","Vibrionaceae - uncultured_bacterium"
+"4","Vibrionaceae - uncultured_bacterium - ASV108","WMS
+(Summer, N = 9)","Proteobacteria;ASV108",0.0127014684865281,0.0104024336599975,"Proteobacteria","Summer","Vibrionaceae - uncultured_bacterium"
+"5","Vibrionaceae - uncultured_bacterium - ASV108","G. elegans
+(Summer, N = 10)","Proteobacteria;ASV108",0.0113211065707231,0.0206204134710299,"Proteobacteria","Summer","Vibrionaceae - uncultured_bacterium"
+"6","Synechococcales_Incertae_Sedis - uncultured_bacterium - ASV126","VH coral
+(Summer, N = 8)","Cyanobacteria;ASV126",0.00158514492753624,0.00448346690969733,"Cyanobacteria","Summer","Synechococcales_Incertae_Sedis - uncultured_bacterium"
+"7","Synechococcales_Incertae_Sedis - uncultured_bacterium - ASV126","G. elegans
+(Summer, N = 10)","Cyanobacteria;ASV126",0.0278748222582062,0.0315536137251771,"Cyanobacteria","Summer","Synechococcales_Incertae_Sedis - uncultured_bacterium"
+"8","Spirochaetaceae - Oceanispirochaeta_sediminicola - ASV13","WMS
+(Summer, N = 9)","Spirochaetota;ASV13",0.033462469775355,0.0104130208982883,"Spirochaetota","Summer","Spirochaetaceae - Oceanispirochaeta_sediminicola"
+"9","Flavobacteriaceae - uncultured_bacterium - ASV160","VH coral
+(Summer, N = 8)","Bacteroidota;ASV160",0.00422687861271676,0.0119554181212176,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"10","Flavobacteriaceae - uncultured_bacterium - ASV160","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV160",0.0265102238113608,0.0205110006589186,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"11","Flavobacteriaceae - uncultured_bacterium - ASV160","WMS
+(Summer, N = 9)","Bacteroidota;ASV160",0.00245348851064052,0.00486864335229623,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"12","Pseudomonadaceae - uncultured_bacterium - ASV20","WMS
+(Summer, N = 9)","Proteobacteria;ASV20",0.00297756990968974,0.00893270972906923,"Proteobacteria","Summer","Pseudomonadaceae - uncultured_bacterium"
+"13","Pseudomonadaceae - uncultured_bacterium - ASV20","Seawater
+(Summer, N = 3)","Proteobacteria;ASV20",0.0118399838774688,0.0205074536365723,"Proteobacteria","Summer","Pseudomonadaceae - uncultured_bacterium"
+"14","Pseudomonadaceae - uncultured_bacterium - ASV20","G. elegans
+(Summer, N = 10)","Proteobacteria;ASV20",0.0022389181066867,0.00708008071172183,"Proteobacteria","Summer","Pseudomonadaceae - uncultured_bacterium"
+"15","Pseudomonadaceae - uncultured_bacterium - ASV20","Sediment
+(Summer, N = 4)","Proteobacteria;ASV20",0.060931899641577,0.121863799283154,"Proteobacteria","Summer","Pseudomonadaceae - uncultured_bacterium"
+"16","uncultured - uncultured_bacterium - ASV22","Sediment
+(Summer, N = 4)","Proteobacteria;ASV22",0.0604662994242776,0.0595819385655363,"Proteobacteria","Summer","uncultured - uncultured_bacterium"
+"17","uncultured - uncultured_bacterium - ASV22","VH coral
+(Summer, N = 8)","Proteobacteria;ASV22",0.0128519852848248,0.0247840328512171,"Proteobacteria","Summer","uncultured - uncultured_bacterium"
+"18","uncultured - uncultured_bacterium - ASV22","G. elegans
+(Summer, N = 10)","Proteobacteria;ASV22",0.0104928477015035,0.0156860206499186,"Proteobacteria","Summer","uncultured - uncultured_bacterium"
+"19","uncultured - uncultured_bacterium - ASV22","Seawater
+(Summer, N = 3)","Proteobacteria;ASV22",0.000453446191051997,0.000785391841400642,"Proteobacteria","Summer","uncultured - uncultured_bacterium"
+"20","uncultured - uncultured_bacterium - ASV22","WMS
+(Summer, N = 9)","Proteobacteria;ASV22",0.000280902821668843,0.00084270846500653,"Proteobacteria","Summer","uncultured - uncultured_bacterium"
+"21","Beggiatoaceae - Beggiatoa_sp. - ASV23","WMS
+(Summer, N = 9)","Proteobacteria;ASV23",0.036035189091285,0.0342606742477975,"Proteobacteria","Summer","Beggiatoaceae - Beggiatoa_sp."
+"22","Saprospiraceae - uncultured_bacterium - ASV259","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV259",0.0261830415817908,0.0216338966433545,"Bacteroidota","Summer","Saprospiraceae - uncultured_bacterium"
+"23","Saprospiraceae - uncultured_bacterium - ASV259","WMS
+(Summer, N = 9)","Bacteroidota;ASV259",0.00168382623413227,0.00383998589507535,"Bacteroidota","Summer","Saprospiraceae - uncultured_bacterium"
+"24","Saprospiraceae - uncultured_bacterium - ASV259","Seawater
+(Summer, N = 3)","Bacteroidota;ASV259",0.00839643537835469,0.0145430526777791,"Bacteroidota","Summer","Saprospiraceae - uncultured_bacterium"
+"25","Saprospiraceae - uncultured_bacterium - ASV259","Sediment
+(Summer, N = 4)","Bacteroidota;ASV259",0.0236933407360651,0.0200047740096263,"Bacteroidota","Summer","Saprospiraceae - uncultured_bacterium"
+"26","Saprospiraceae - uncultured_bacterium - ASV259","VH coral
+(Summer, N = 8)","Bacteroidota;ASV259",0.0244808336508233,0.0154642556906144,"Bacteroidota","Summer","Saprospiraceae - uncultured_bacterium"
+"27","Cyclobacteriaceae - uncultured_bacterium - ASV33","WMS
+(Summer, N = 9)","Bacteroidota;ASV33",0.0114685323854296,0.0113379027561437,"Bacteroidota","Summer","Cyclobacteriaceae - uncultured_bacterium"
+"28","Cyclobacteriaceae - uncultured_bacterium - ASV33","Sediment
+(Summer, N = 4)","Bacteroidota;ASV33",0.021188135733535,0.016702668056071,"Bacteroidota","Summer","Cyclobacteriaceae - uncultured_bacterium"
+"29","Cyclobacteriaceae - uncultured_bacterium - ASV33","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV33",0.0289699280181815,0.0342921110055003,"Bacteroidota","Summer","Cyclobacteriaceae - uncultured_bacterium"
+"30","Cyclobacteriaceae - uncultured_bacterium - ASV33","Seawater
+(Summer, N = 3)","Bacteroidota;ASV33",0.0036058311440787,0.00624548274505852,"Bacteroidota","Summer","Cyclobacteriaceae - uncultured_bacterium"
+"31","Cyclobacteriaceae - uncultured_bacterium - ASV33","VH coral
+(Summer, N = 8)","Bacteroidota;ASV33",0.0545840305055196,0.039293213468387,"Bacteroidota","Summer","Cyclobacteriaceae - uncultured_bacterium"
+"32","Flavobacteriaceae - uncultured_bacterium - ASV40","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV40",0.0257109522484171,0.0290369585350486,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"33","Flavobacteriaceae - uncultured_bacterium - ASV40","VH coral
+(Summer, N = 8)","Bacteroidota;ASV40",0.00382699275362319,0.0108243701105549,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"34","Halieaceae - uncultured_bacterium - ASV43","VH coral
+(Summer, N = 8)","Proteobacteria;ASV43",0.00875699040698848,0.0171211654835846,"Proteobacteria","Summer","Halieaceae - uncultured_bacterium"
+"35","Halieaceae - uncultured_bacterium - ASV43","WMS
+(Summer, N = 9)","Proteobacteria;ASV43",0.00333839848966248,0.0100151954689874,"Proteobacteria","Summer","Halieaceae - uncultured_bacterium"
+"36","Halieaceae - uncultured_bacterium - ASV43","G. elegans
+(Summer, N = 10)","Proteobacteria;ASV43",0.0236613010757192,0.0324904761109961,"Proteobacteria","Summer","Halieaceae - uncultured_bacterium"
+"37","Halieaceae - uncultured_bacterium - ASV43","Sediment
+(Summer, N = 4)","Proteobacteria;ASV43",0.0274119196575568,0.0548238393151135,"Proteobacteria","Summer","Halieaceae - uncultured_bacterium"
+"38","Rubritaleaceae - uncultured_bacterium - ASV47","VH coral
+(Summer, N = 8)","Verrucomicrobiota;ASV47",0.00384963768115943,0.0108884196378363,"Verrucomicrobiota","Summer","Rubritaleaceae - uncultured_bacterium"
+"39","Rubritaleaceae - uncultured_bacterium - ASV47","G. elegans
+(Summer, N = 10)","Verrucomicrobiota;ASV47",0.0340188313646745,0.037347482795844,"Verrucomicrobiota","Summer","Rubritaleaceae - uncultured_bacterium"
+"40","Rubritaleaceae - uncultured_bacterium - ASV47","Sediment
+(Summer, N = 4)","Verrucomicrobiota;ASV47",0.00392382833937,0.00784765667874,"Verrucomicrobiota","Summer","Rubritaleaceae - uncultured_bacterium"
+"41","Flavobacteriaceae - uncultured_bacterium - ASV54","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV54",0.0482398283187185,0.0284265660507407,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"42","Flavobacteriaceae - uncultured_bacterium - ASV54","VH coral
+(Summer, N = 8)","Bacteroidota;ASV54",0.0450757977599607,0.0708972112038309,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"43","Flavobacteriaceae - uncultured_bacterium - ASV54","Sediment
+(Summer, N = 4)","Bacteroidota;ASV54",0.00754582372955768,0.0150916474591154,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"44","Flavobacteriaceae - uncultured_bacterium - ASV54","Seawater
+(Summer, N = 3)","Bacteroidota;ASV54",0.00443002111986813,0.00767302165821478,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"45","uncultured - uncultured_Alphaproteobacteria - ASV58","G. elegans
+(Summer, N = 10)","Proteobacteria;ASV58",0.0225939431678138,0.0384118884654171,"Proteobacteria","Summer","uncultured - uncultured_Alphaproteobacteria"
+"46","uncultured - uncultured_Alphaproteobacteria - ASV58","WMS
+(Summer, N = 9)","Proteobacteria;ASV58",0.00302490845671776,0.00907472537015327,"Proteobacteria","Summer","uncultured - uncultured_Alphaproteobacteria"
+"47","uncultured - uncultured_Alphaproteobacteria - ASV58","Sediment
+(Summer, N = 4)","Proteobacteria;ASV58",0.0133259911894273,0.0266519823788546,"Proteobacteria","Summer","uncultured - uncultured_Alphaproteobacteria"
+"48","uncultured - uncultured_bacterium - ASV6","VH coral
+(Summer, N = 8)","unassigned Bacteria;ASV6",0.0926203547516875,0.0439146525048192,"unassigned Bacteria","Summer","uncultured - uncultured_bacterium"
+"49","uncultured - uncultured_bacterium - ASV6","WMS
+(Summer, N = 9)","unassigned Bacteria;ASV6",0.00802198494038676,0.0104770179559142,"unassigned Bacteria","Summer","uncultured - uncultured_bacterium"
+"50","uncultured - uncultured_bacterium - ASV6","G. elegans
+(Summer, N = 10)","unassigned Bacteria;ASV6",0.00138099606984194,0.0029210701428898,"unassigned Bacteria","Summer","uncultured - uncultured_bacterium"
+"51","uncultured - uncultured_bacterium - ASV6","Sediment
+(Summer, N = 4)","unassigned Bacteria;ASV6",0.00387596899224805,0.0077519379844961,"unassigned Bacteria","Summer","uncultured - uncultured_bacterium"
+"52","Marinilabiliaceae - uncultured_bacterium - ASV7","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV7",0.00087152516904583,0.0027560045723481,"Bacteroidota","Summer","Marinilabiliaceae - uncultured_bacterium"
+"53","Marinilabiliaceae - uncultured_bacterium - ASV7","WMS
+(Summer, N = 9)","Bacteroidota;ASV7",0.0284450975197152,0.030288877915016,"Bacteroidota","Summer","Marinilabiliaceae - uncultured_bacterium"
+"54","Flavobacteriaceae - uncultured_bacterium - ASV73","VH coral
+(Summer, N = 8)","Bacteroidota;ASV73",0.00652763575452608,0.0122715148025807,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"55","Flavobacteriaceae - uncultured_bacterium - ASV73","Sediment
+(Summer, N = 4)","Bacteroidota;ASV73",0.0426351866931333,0.0420871080337418,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"56","Flavobacteriaceae - uncultured_bacterium - ASV73","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV73",0.0021700143472023,0.0068621878924027,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"57","Flavobacteriaceae - uncultured_bacterium - ASV73","WMS
+(Summer, N = 9)","Bacteroidota;ASV73",0.0166159980442996,0.0116476540935245,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"58","Woeseiaceae - uncultured_bacterium - ASV8","VH coral
+(Summer, N = 8)","Proteobacteria;ASV8",0.0191802024608658,0.0272088694319039,"Proteobacteria","Summer","Woeseiaceae - uncultured_bacterium"
+"59","Woeseiaceae - uncultured_bacterium - ASV8","Sediment
+(Summer, N = 4)","Proteobacteria;ASV8",0.0590308370044052,0.11806167400881,"Proteobacteria","Summer","Woeseiaceae - uncultured_bacterium"
+"60","uncultured - uncultured_bacterium - ASV86","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV86",0.00115702479338843,0.00365883365639317,"Bacteroidota","Summer","uncultured - uncultured_bacterium"
+"61","uncultured - uncultured_bacterium - ASV86","WMS
+(Summer, N = 9)","Bacteroidota;ASV86",0.0270171613971358,0.0210535082491354,"Bacteroidota","Summer","uncultured - uncultured_bacterium"
+"62","uncultured - uncultured_bacterium - ASV86","Seawater
+(Summer, N = 3)","Bacteroidota;ASV86",0.00226723095525998,0.0039269592070032,"Bacteroidota","Summer","uncultured - uncultured_bacterium"
+"63","Flavobacteriaceae - uncultured_bacterium - ASV89","WMS
+(Summer, N = 9)","Bacteroidota;ASV89",0.013822594187958,0.0179815516333602,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"64","Flavobacteriaceae - uncultured_bacterium - ASV89","VH coral
+(Summer, N = 8)","Bacteroidota;ASV89",0.0189526262842592,0.0311670157519592,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"
+"65","Flavobacteriaceae - uncultured_bacterium - ASV89","G. elegans
+(Summer, N = 10)","Bacteroidota;ASV89",0.0116704592072446,0.0168778150572889,"Bacteroidota","Summer","Flavobacteriaceae - uncultured_bacterium"

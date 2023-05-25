@@ -1,0 +1,327 @@
+---
+title: "Survival Analysis.WMS2"
+author: "Joshua Heitzman"
+date: '2023-03-24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("RColorBrewer")
+library("patchwork")
+library("scales")
+library("ggplot2")
+library("forcats")
+#library("tibble")
+library("ggpubr")
+library("dplyr")
+library("tidyverse")
+
+```
+
+## Survival Analysis
+```{r Surival analysis Summer}
+library("survival")
+library("survminer")
+
+## Summer Survival
+LF2_data <- read.csv("SummerSurv_2020.csv")
+attach(LF2_data)
+
+LF2_data$Treatment <- 
+  factor(LF2_data$Treatment,
+         levels = c("Control", "Makusa", "Sediment", "WMS", "Lesion", "WMS_Lesion"),
+         labels = c("a","b", "c", "d", "e", "f"), ordered=TRUE)
+
+surv_object <- Surv(time = LF2_data$Day, event = LF2_data$Mortality_1)
+fit2 <- survfit(surv_object ~ Treatment, data = LF2_data)
+summary(fit2)
+ggsurvplot(fit2, data = LF2_data, pval = FALSE, conf.int = TRUE)
+textcol <- "grey40"
+
+Summer_Surv <- 
+  ggsurvplot(
+      fit = fit2,data = surv_object, 
+      conf.int = TRUE, 
+      conf.int.alpha = 0.1, 
+      pval = FALSE,
+      palette = "Set2",
+      fun = function(y) y*100,
+      legend.labs = c("VH Coral", 
+                      "G. elegans paired", 
+                      "Sediment inoc.", 
+                      "WMS inoc.", 
+                      "VH Coral (Injured)", 
+                      "WMS inoc. (Injured)"),
+      xlab = "", 
+      ylab = c("Survival probability (%)"), 
+      legend = "none",
+      ggtheme = 
+      theme_pubr() +
+      theme(
+        legend.position = "right",
+        legend.direction = "vertical",
+        legend.title = element_blank(),
+        axis.title.x = element_text (size = 12),
+        axis.title.y = element_text (size = 12),
+        axis.text.x = element_text (size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.text = element_text(size = 12)
+        )) 
+
+Summer_Surv <- 
+  ggsurvplot(
+      fit = fit2,data = surv_object, 
+      conf.int = TRUE, 
+      conf.int.alpha = 0.1, 
+      pval = TRUE,
+      risk.table = FALSE,
+      risk.table.y.text.col = TRUE,
+      risk.table.height = 0.3,
+      palette = "Set2",
+      fun = function(y) y*100,
+      legend.labs = c("VH Coral", 
+                      "G. elegans paired", 
+                      "Sediment inoc.", 
+                      "WMS inoc.", 
+                      "VH Coral (Injured)", 
+                      "WMS inoc. (Injured)"),
+      xlab = "Day", 
+      ylab = c("Survival probability"), 
+      ggtheme = 
+      theme_pubr() +
+      theme(
+        legend.position = "right",
+        legend.title = element_blank(),
+        legend.direction = "vertical",
+        axis.title.x = element_text (size = 12),
+        axis.title.y = element_text (size = 12),
+        axis.text.x = element_text (size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.text = element_text(size = 12)
+        )) 
+
+##Pairwise comparison (Survival Analysis) of treatments against control treatment
+#Control x G. elegans   KW-PW p = 0.004
+#Control x WMS          KW-PW p = 0.3
+#Control x Injury & WMS KW-PW p = 0.06 
+  # print("Control")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, LF2_data)
+  # print("Sediment-Trapping G. elegans")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, filter(LF2_data, Treatment %in% c("a","b")))
+  # print("Sediment")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, filter(LF2_data, Treatment %in% c("a","c")))
+  # print("White Mat Syndrome Microbial Mat")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, filter(LF2_data, Treatment %in% c("a","d")))
+  # print("Lesion Control")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, filter(LF2_data, Treatment %in% c("a","e")))
+  # print("Lesion and Microbial Mat")
+  # survdiff(Surv(Day, Mortality_1) ~ Treatment, filter(LF2_data, Treatment %in% c("a","f")))
+
+detach(LF2_data)
+
+## Summer Incubation Tank Temperature
+Summer2020Exp_Temp <- read.csv("IncubCsv/2020Summer_Incub_Temps_Basic.csv") %>%
+  group_by(date) %>% 
+  get_summary_stats(type = "mean_sd")
+
+Summer2020Exp_Temp$newdate <- strptime(as.character(Summer2020Exp_Temp$date), "%m/%d/%Y")
+format(Summer2020Exp_Temp$newdate, "%Y-%m-%d")
+Summer2020Exp_Temp <- Summer2020Exp_Temp %>% 
+  mutate(date = as.Date(newdate)) %>% 
+  filter(between(date, as.Date("2020-09-01"), as.Date("2020-10-02")))
+
+
+Summer2020Exp_pH <- read.csv("IncubCsv/2020Summer_Incub_pH_Basic.csv") %>% 
+  group_by(date) %>% 
+  get_summary_stats(type = "mean_sd")
+
+Summer2020Exp_pH$newdate <- strptime(as.character(Summer2020Exp_pH$date), "%m/%d/%Y")
+format(Summer2020Exp_pH$newdate, "%Y-%m-%d")
+Summer2020Exp_pH <- Summer2020Exp_pH %>% 
+  mutate(date = as.Date(newdate)) %>% 
+  filter(between(date, as.Date("2020-09-01"), as.Date("2020-10-02")))
+
+SummerTempwDay <- read.csv("rewritedatetoday_summer.csv") %>%
+  select(day, mean, sd)
+
+Summer2020Temp_plot <- 
+  ggplot(SummerTempwDay, aes(x = day, y = mean)) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), alpha = 0.5, width = 0.5) +
+  geom_point(color = "black", size = 2) +
+  scale_y_continuous(limits = c(24,29), breaks = pretty_breaks(n = 2)) +
+  scale_x_continuous(limits = c(0, 30), breaks = c(0,10,20,30)) +
+  labs(x = "Day", y = expression("Temperature (°C)")) +
+  theme_pubr() +
+    theme(
+    axis.title.x = element_text (size  = 12),
+    axis.title.y = element_text (size  = 12),
+    axis.text.x = element_text (size  = 12),
+    axis.text.y = element_text(size = 12))
+
+```
+
+```{r Survival Analysis Summer - KW Pairwise Comparison}
+
+Treat_Summary <- 
+  read.csv("SummerPartMort_2020_KW.csv") %>% 
+  drop_na() %>% 
+  mutate(Treatment = factor(Treatment, levels = c("Control", "Makusa", "Sediment", "WMS", "Lesion", "WMS_Lesion"))) 
+
+print("KW overall")
+
+kruskal.test(Part_Mort ~ Treatment, data = Treat_Summary)
+G.elegans <-  kruskal.test(Part_Mort ~ Treatment, data = filter(Treat_Summary, Treatment %in% c("Control", "Makusa")))
+Sediment <-   kruskal.test(Part_Mort ~ Treatment, data = filter(Treat_Summary, Treatment %in% c("Control", "Sediment")))
+WMS <-        kruskal.test(Part_Mort ~ Treatment, data = filter(Treat_Summary, Treatment %in% c("Control", "WMS")))
+Lesion <-     kruskal.test(Part_Mort ~ Treatment, data = filter(Treat_Summary, Treatment %in% c("Control", "Lesion")))
+Lesion_WMS <- kruskal.test(Part_Mort ~ Treatment, data = filter(Treat_Summary, Treatment %in% c("Control", "WMS_Lesion")))
+
+print("Sediment-Trapping G. elegans")
+round(G.elegans$p.value*5, digits = 3)
+
+print("Sediment")
+round(Sediment$p.value*5, digits = 3)
+
+print("White Mat Syndrome Microbial Mat")
+round(WMS$p.value*5, digits = 3)
+
+print("Lesion Control")
+round(Lesion$p.value*5, digits = 3)
+
+print("Lesion and Microbial Mat")
+round(Lesion_WMS$p.value*5, digits = 3)
+```
+
+```{r Winter Survival}
+## Winter Survival
+LFw_data <- read.csv("WinterSurv_2019.csv")
+
+attach(LFw_data)
+
+LFw_data$Treatment <- 
+  factor(LFw_data$Treatment,
+         levels = c("Control", "Con_Mak", "Sediment", "WMS"),
+         labels = c("a","b", "c", "d"), ordered=TRUE)
+
+
+surv_object <- Surv(time = LFw_data$Day, event = LFw_data$Mortality_1)
+fit1w <- survfit(surv_object ~ Treatment, data = LFw_data)
+
+summary(fit1w)
+ggsurvplot(fit1w, data = LFw_data, pval = FALSE)
+
+textcol <- "grey40"
+
+Winter_Surv <- 
+    ggsurvplot(
+      fit = fit1w, data = surv_object, 
+      conf.int = TRUE, 
+      conf.int.alpha = 0.1, 
+      pval = FALSE,
+      palette = "Set2",
+      fun = function(y) y*100,
+      legend.labs = c("Control",
+                      "G. elegans",
+                      "Sediment",
+                      "WMS"),
+      xlab = "", 
+      ylab = c("Survival probability (%)"), 
+      legend = "none",
+      ggtheme = 
+      theme_pubr() +
+      theme(
+        legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_text (size = 12),
+        axis.title.y = element_text (size = 12),
+        axis.text.x = element_text (size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.text = element_text(size = 12)
+        )) 
+
+Winter_Surv
+ggsave(filename = "winter_surv.pdf", path = "figures", width = 4, height = 4)
+
+Winter_Risk_Table <- 
+    ggsurvplot(
+      fit = fit1w, data = surv_object, 
+      conf.int = TRUE, 
+      conf.int.alpha = 0.1, 
+      pval = TRUE,
+      risk.table = TRUE,
+      risk.table.y.text.col = TRUE,
+      risk.table.height = 0.3,
+      palette = "Set2",
+      fun = function(y) y*100,
+      legend.labs = c("Control",
+                      "G. elegans",
+                      "Sediment",
+                      "WMS"),
+      xlab = "Day", 
+      ylab = c("Survival probability"), 
+      legend = "none",
+      ggtheme = 
+      theme_pubr() +
+      theme(
+        legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_text (size = 12),
+        axis.title.y = element_text (size = 12),
+        axis.text.x = element_text (size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.text = element_text(size = 12)
+        )) 
+
+ggsave(filename = "winter_surv_rt.pdf", path = "figures", width = 4, height = 4)
+detach(LFw_data)
+
+## Winter Incubation Tank Temperature
+HOBO.1 <- read.csv("2019_Winter_HOBO/20191210_Incubation_1.csv") %>% 
+  mutate(Date = as.Date(ï..Date)) %>%
+  mutate(Temp1 = Temp) %>%
+  filter(between(Date, as.Date("2019-12-10"), as.Date("2020-01-23"))) %>% 	
+  group_by(Date) %>%
+  subset( , c(Date, Temp1))
+HOBO.2 <- read.csv("2019_Winter_HOBO/20191210_Incubation_2.csv") %>% 
+  mutate(Date = as.Date(ï..Date)) %>%
+  mutate(Temp2 = Temp) %>%
+  filter(between(Date, as.Date("2019-12-10"), as.Date("2020-01-23"))) %>% 
+  group_by(Date) %>%
+    subset( ,Temp2)
+HOBO.3 <- read.csv("2019_Winter_HOBO/20191210_Incubation_3.csv") %>% 
+  mutate(Date = as.Date(ï..Date)) %>%
+  mutate(Temp3 = Temp) %>%
+  filter(between(Date, as.Date("2019-12-10"), as.Date("2020-01-23"))) %>% 
+  group_by(Date) %>%
+    subset( ,Temp3)
+HOBO.all.avg <- cbind.data.frame(HOBO.1, HOBO.2, HOBO.3) %>% 
+  mutate(Temp_all = (Temp1 + Temp2 + Temp3)/3) %>%
+  subset( , c(Date, Temp_all)) %>%
+  group_by(Date) %>%
+  get_summary_stats(type = "mean_sd")
+
+
+#write.csv(HOBO.all.avg, file = "winter_rewrite.csv")
+WinterTempwDay <- read.csv("winter_rewrite_main.csv") %>%
+  select(day, mean, sd)
+
+Winter2019Temp_plot <- 
+  ggplot(WinterTempwDay, aes(x = day, y = mean)) + 
+  geom_line() +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), alpha = 0.5, width = 0.5) +
+  geom_point(color = "black", size = 2) +
+  scale_y_continuous(limits = c(16,21), breaks = pretty_breaks(n = 2)) +
+  scale_x_continuous(limits = c(0, 45), breaks = c(0,10,20,30, 40)) +
+  labs(x = "Day", y = expression("Temperature (°C)")) +
+  theme_pubr() +
+    theme(
+    axis.title.x = element_text (size  = 12),
+    axis.title.y = element_text (size  = 12),
+    axis.text.x = element_text (size  = 12),
+    axis.text.y = element_text(size = 12))
+  
+Winter2019Temp_plot
+```

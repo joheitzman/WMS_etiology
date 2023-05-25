@@ -1,0 +1,66 @@
+#SampleID	Year	Month	Environment	Experiment	Kits	Season	Environment_plus	Incubation	Experiment_Season	Experiment_Other	Incub_Time	Exp_Time	Symptom	Exp_Time_Season
+#q2:types	numeric	numeric	categorical	categorical	categorical	categorical	categorical	categorical	categorical	categorical	categorical	categorical	categorical	categorical
+F07-20-WMS	2020	7	Field	Disease	PSPro	Summer	Field	FALSE	Disease_Summer	Disease	NA	NA	NA	NA
+F10-20-WMS	2020	10	Field	Disease	PSPro	Summer	Field	FALSE	Disease_Summer	Disease	NA	NA	NA	NA
+WSt1-WMS	2019	12	Incubation	Disease	PSPro	Winter	Field	TRUE	Disease_Winter	Disease	Start	WMS Start	TRUE	WMS Start_Winter
+WSt2-WMS	2019	12	Incubation	Disease	PSPro	Winter	Field	TRUE	Disease_Winter	Disease	Start	WMS Start	TRUE	WMS Start_Winter
+WSt3-WMS	2019	12	Incubation	Disease	PSPro	Winter	Field	TRUE	Disease_Winter	Disease	Start	WMS Start	TRUE	WMS Start_Winter
+SSt1-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SSt2-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SSt3-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SSt4-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SSt5-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SSt6-WMS	2020	9	Incubation	Disease	PSPro	Summer	Field	TRUE	Disease_Summer	Disease	Start	WMS Start	TRUE	WMS Start_Summer
+SEnd-1A-02-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	TRUE	G. elegans End_Summer
+SEnd-1B-05-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	FALSE	G. elegans End_Summer
+SEnd-1C-06-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	TRUE	G. elegans End_Summer
+SEnd-1C-04-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Disease	End	WMS End	TRUE	WMS End_Summer
+SEnd-1D-07-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	TRUE	G. elegans End_Summer
+SEnd-2C-06-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Disease	End	WMS End	TRUE	WMS End_Summer
+SEnd-2C-04-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	TRUE	G. elegans End_Summer
+SEnd-2D-09-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Gelidium	End	G. elegans End	TRUE	G. elegans End_Summer
+SEnd-2D-07-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Disease	End	WMS End	TRUE	WMS End_Summer
+SEnd-2D-05-WMS	2020	10	Incubation	Disease	PSPro	Summer	Incubation	TRUE	Disease_Summer	Disease	End	WMS End	TRUE	WMS End_Summer
+F07-20-SED	2020	7	Field	Sediment	PSPro	Summer	Field	FALSE	Sediment_Summer	Sediment	NA	NA	NA	NA
+F10-20-SED	2020	10	Field	Sediment	PSPro	Summer	Field	FALSE	Sediment_Summer	Sediment	NA	NA	NA	NA
+F07-20-GEL	2020	7	Field	Gelidium	PSPro	Summer	Field	FALSE	Gelidium_Summer	Gelidium	NA	NA	NA	NA
+F10-20-GEL	2020	10	Field	Gelidium	PSPro	Summer	Field	FALSE	Gelidium_Summer	Gelidium	NA	NA	NA	NA
+F01-21-GEL	2021	1	Field	Gelidium	PSPro	Winter	Field	FALSE	Gelidium_Winter	Gelidium	NA	NA	NA	NA
+WSt1-1A-04-GEL	2019	12	Incubation	Gelidium	PSPro	Winter	Field	TRUE	Gelidium_Winter	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Winter
+WSt2-1A-05-GEL	2019	12	Incubation	Gelidium	PSPro	Winter	Field	TRUE	Gelidium_Winter	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Winter
+WSt3-1A-06-GEL	2019	12	Incubation	Gelidium	PSPro	Winter	Field	TRUE	Gelidium_Winter	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Winter
+SSt1-1A-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start		G. elegans Start_Summer
+SSt2-1B-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Summer
+SSt3-1C-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Summer
+SSt4-1D-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Summer
+SSt5-2C-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Summer
+SSt6-2D-GEL	2020	9	Incubation	Gelidium	PSPro	Summer	Field	TRUE	Gelidium_Summer	Gelidium	Start	G. elegans Start	NA	G. elegans Start_Summer
+F07-20-COR	2020	7	Field	Coral	PSPro	Summer	Field	FALSE	Coral_Summer	Coral	NA	NA	NA	NA
+WSt1-1A-COR	2019	12	Incubation	Coral	PSPro	Winter	Field	TRUE	Coral_Winter	Coral	Start	Coral Start	NA	Coral Start_Winter
+WSt2-1C-COR	2019	12	Incubation	Coral	PSPro	Winter	Field	TRUE	Coral_Winter	Coral	Start	Coral Start	NA	Coral Start_Winter
+WSt3-2C-COR	2019	12	Incubation	Coral	PSPro	Winter	Field	TRUE	Coral_Winter	Coral	Start	Coral Start	NA	Coral Start_Winter
+SSt1-1A-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+SSt2-1B-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+SSt3-1C-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+SSt4-1D-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+SSt5-2C-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+SSt6-2D-COR	2020	9	Incubation	Coral	PSPro	Summer	Field	TRUE	Coral_Summer	Coral	Start	Coral Start	NA	Coral Start_Summer
+F04-21-GEL	2021	4	Field	Gelidium	PSPro	Winter	Field	FALSE	Gelidium_Winter	Gelidium	NA	NA	NA	NA
+F04-21-SED	2021	4	Field	Sediment	PSPro	Winter	Field	FALSE	Sediment_Winter	Sediment	NA	NA	NA	NA
+F07-21-GEL	2021	7	Field	Gelidium	PSPro	Summer	Field	FALSE	Gelidium_Summer	Gelidium	NA	NA	NA	NA
+F07-21-SED	2021	7	Field	Sediment	PSPro	Summer	Field	FALSE	Sediment_Summer	Sediment	NA	NA	NA	NA
+F07-21-COR	2021	7	Field	Coral	PSPro	Summer	Field	FALSE	Coral_Summer	Coral	NA	NA	NA	NA
+F09-21-GEL	2021	9	Field	Gelidium	PSPro	Summer	Field	FALSE	Gelidium_Summer	Gelidium	NA	NA	NA	NA
+F09-21-SED	2021	9	Field	Sediment	PSPro	Summer	Field	FALSE	Sediment_Summer	Sediment	NA	NA	NA	NA
+F09-21-WMS	2021	9	Field	Disease	PSPro	Summer	Field	FALSE	Disease_Summer	Disease	NA	NA	NA	NA
+F04-21-WAT	2021	4	Field	Seawater	PW	Winter	Field	FALSE	Seawater_Winter	Seawater	NA	NA	NA	NA
+F07-21-WAT	2021	7	Field	Seawater	PW	Summer	Field	FALSE	Seawater_Summer	Seawater	NA	NA	NA	NA
+F09-21-WAT	2021	9	Field	Seawater	PW	Summer	Field	FALSE	Seawater_Summer	Seawater	NA	NA	NA	NA
+WEnd1-WAT	2020	1	Incubation	Seawater	PW	Winter	Incubation	TRUE	Seawater_Winter	Seawater	End	Seawater End	NA	Seawater End_Winter
+WEnd2-WAT	2020	1	Incubation	Seawater	PW	Winter	Incubation	TRUE	Seawater_Winter	Seawater	End	Seawater End	NA	Seawater End_Winter
+WEnd3-WAT	2020	1	Incubation	Seawater	PW	Winter	Incubation	TRUE	Seawater_Winter	Seawater	End	Seawater End	NA	Seawater End_Winter
+SEnd1-WAT	2020	10	Incubation	Seawater	PW	Summer	Incubation	TRUE	Seawater_Summer	Seawater	End	Seawater End	NA	Seawater End_Summer
+SEnd2-WAT	2020	10	Incubation	Seawater	PW	Summer	Incubation	TRUE	Seawater_Summer	Seawater	End	Seawater End	NA	Seawater End_Summer
+SEnd3-WAT	2020	10	Incubation	Seawater	PW	Summer	Incubation	TRUE	Seawater_Summer	Seawater	End	Seawater End	NA	Seawater End_Summer
+F10-20-WAT	2020	10	Field	Seawater	PW	Summer	Field	FALSE	Seawater_Summer	Seawater	NA	NA	NA	NA
+F01-21-WAT	2021	1	Field	Seawater	PW	Winter	Field	FALSE	Seawater_Winter	Seawater	NA	NA	NA	NA

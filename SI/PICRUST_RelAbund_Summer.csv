@@ -1,0 +1,121 @@
+,sample,taxonomy,mean,sd,tax_col,tax_bin,Time
+1,"VH Coral
+(Summer, N =6)",adenosine ribonucleotides de novo biosynthesis;PWY-7219,0.007842231,0.000257874,adenosine ribonucleotides de novo biosynthesis,PWY-7219,NA
+2,"G. elegans
+(Summer, N = 12)",adenosine ribonucleotides de novo biosynthesis;PWY-7219,0.007746467,0.000480961,adenosine ribonucleotides de novo biosynthesis,PWY-7219,NA
+3,"WMS
+(Summer, N = 10)",adenosine ribonucleotides de novo biosynthesis;PWY-7219,0.0076121,0.000423324,adenosine ribonucleotides de novo biosynthesis,PWY-7219,NA
+4,"VH Coral
+(Summer, N =6)",CDP-diacylglycerol biosynthesis I;PWY-5667,0.007927974,0.000114847,CDP-diacylglycerol biosynthesis I,PWY-5667,NA
+5,"G. elegans
+(Summer, N = 12)",CDP-diacylglycerol biosynthesis I;PWY-5667,0.007769741,0.000557745,CDP-diacylglycerol biosynthesis I,PWY-5667,NA
+6,"WMS
+(Summer, N = 10)",CDP-diacylglycerol biosynthesis I;PWY-5667,0.007498013,0.000310922,CDP-diacylglycerol biosynthesis I,PWY-5667,NA
+7,"VH Coral
+(Summer, N =6)",CDP-diacylglycerol biosynthesis II;PWY0-1319,0.007927974,0.000114847,CDP-diacylglycerol biosynthesis II,PWY0-1319,NA
+8,"G. elegans
+(Summer, N = 12)",CDP-diacylglycerol biosynthesis II;PWY0-1319,0.007769741,0.000557745,CDP-diacylglycerol biosynthesis II,PWY0-1319,NA
+9,"WMS
+(Summer, N = 10)",CDP-diacylglycerol biosynthesis II;PWY0-1319,0.007498013,0.000310922,CDP-diacylglycerol biosynthesis II,PWY0-1319,NA
+10,"VH Coral
+(Summer, N =6)",cis-vaccenate biosynthesis;PWY-5973,0.009123677,0.000336409,cis-vaccenate biosynthesis,PWY-5973,NA
+11,"G. elegans
+(Summer, N = 12)",cis-vaccenate biosynthesis;PWY-5973,0.009073013,0.000917082,cis-vaccenate biosynthesis,PWY-5973,NA
+12,"WMS
+(Summer, N = 10)",cis-vaccenate biosynthesis;PWY-5973,0.008821744,0.000380387,cis-vaccenate biosynthesis,PWY-5973,NA
+13,"VH Coral
+(Summer, N =6)",fatty acid elongation -- saturated;FASYN-ELONG-PWY,0.008566897,0.000368037,fatty acid elongation -- saturated,FASYN-ELONG-PWY,NA
+14,"G. elegans
+(Summer, N = 12)",fatty acid elongation -- saturated;FASYN-ELONG-PWY,0.008056199,0.001211518,fatty acid elongation -- saturated,FASYN-ELONG-PWY,NA
+15,"WMS
+(Summer, N = 10)",fatty acid elongation -- saturated;FASYN-ELONG-PWY,0.007619338,0.000438208,fatty acid elongation -- saturated,FASYN-ELONG-PWY,NA
+16,"VH Coral
+(Summer, N =6)",L-isoleucine biosynthesis I (from threonine);ILEUSYN-PWY,0.008144283,0.00033542,L-isoleucine biosynthesis I (from threonine),ILEUSYN-PWY,NA
+17,"G. elegans
+(Summer, N = 12)",L-isoleucine biosynthesis I (from threonine);ILEUSYN-PWY,0.008593914,0.000746985,L-isoleucine biosynthesis I (from threonine),ILEUSYN-PWY,NA
+18,"WMS
+(Summer, N = 10)",L-isoleucine biosynthesis I (from threonine);ILEUSYN-PWY,0.008062436,0.000482645,L-isoleucine biosynthesis I (from threonine),ILEUSYN-PWY,NA
+19,"VH Coral
+(Summer, N =6)",L-isoleucine biosynthesis II;PWY-5101,0.008703541,0.000360819,L-isoleucine biosynthesis II,PWY-5101,NA
+20,"G. elegans
+(Summer, N = 12)",L-isoleucine biosynthesis II;PWY-5101,0.009138919,0.000726612,L-isoleucine biosynthesis II,PWY-5101,NA
+21,"WMS
+(Summer, N = 10)",L-isoleucine biosynthesis II;PWY-5101,0.008603574,0.000482872,L-isoleucine biosynthesis II,PWY-5101,NA
+22,"VH Coral
+(Summer, N =6)",L-isoleucine biosynthesis III;PWY-5103,0.007453604,0.000339907,L-isoleucine biosynthesis III,PWY-5103,NA
+23,"G. elegans
+(Summer, N = 12)",L-isoleucine biosynthesis III;PWY-5103,0.007669921,0.000498609,L-isoleucine biosynthesis III,PWY-5103,NA
+24,"WMS
+(Summer, N = 10)",L-isoleucine biosynthesis III;PWY-5103,0.007320209,0.000350548,L-isoleucine biosynthesis III,PWY-5103,NA
+25,"VH Coral
+(Summer, N =6)",L-valine biosynthesis;VALSYN-PWY,0.008144283,0.00033542,L-valine biosynthesis,VALSYN-PWY,NA
+26,"G. elegans
+(Summer, N = 12)",L-valine biosynthesis;VALSYN-PWY,0.008593914,0.000746985,L-valine biosynthesis,VALSYN-PWY,NA
+27,"WMS
+(Summer, N = 10)",L-valine biosynthesis;VALSYN-PWY,0.008062436,0.000482645,L-valine biosynthesis,VALSYN-PWY,NA
+28,"VH Coral
+(Summer, N =6)",pentose phosphate pathway (non-oxidative branch);NONOXIPENT-PWY,0.008123911,0.000287305,pentose phosphate pathway (non-oxidative branch),NONOXIPENT-PWY,NA
+29,"G. elegans
+(Summer, N = 12)",pentose phosphate pathway (non-oxidative branch);NONOXIPENT-PWY,0.007938235,0.000487096,pentose phosphate pathway (non-oxidative branch),NONOXIPENT-PWY,NA
+30,"WMS
+(Summer, N = 10)",pentose phosphate pathway (non-oxidative branch);NONOXIPENT-PWY,0.007940027,0.000584778,pentose phosphate pathway (non-oxidative branch),NONOXIPENT-PWY,NA
+31,"VH Coral
+(Summer, N =6)",pyruvate fermentation to isobutanol (engineered);PWY-7111,0.007916185,0.000362219,pyruvate fermentation to isobutanol (engineered),PWY-7111,NA
+32,"G. elegans
+(Summer, N = 12)",pyruvate fermentation to isobutanol (engineered);PWY-7111,0.008419415,0.001031111,pyruvate fermentation to isobutanol (engineered),PWY-7111,NA
+33,"WMS
+(Summer, N = 10)",pyruvate fermentation to isobutanol (engineered);PWY-7111,0.007588317,0.000389284,pyruvate fermentation to isobutanol (engineered),PWY-7111,NA
+34,"VH Coral
+(Summer, N =6)",superpathway of adenosine nucleotides de novo biosynthesis I;PWY-7229,0.008033325,0.000236961,superpathway of adenosine nucleotides de novo biosynthesis I,PWY-7229,NA
+35,"G. elegans
+(Summer, N = 12)",superpathway of adenosine nucleotides de novo biosynthesis I;PWY-7229,0.007721221,0.000351131,superpathway of adenosine nucleotides de novo biosynthesis I,PWY-7229,NA
+36,"WMS
+(Summer, N = 10)",superpathway of adenosine nucleotides de novo biosynthesis I;PWY-7229,0.007450179,0.000261951,superpathway of adenosine nucleotides de novo biosynthesis I,PWY-7229,NA
+37,"VH Coral
+(Summer, N =6)",superpathway of adenosine nucleotides de novo biosynthesis II;PWY-6126,0.007795506,0.000220438,superpathway of adenosine nucleotides de novo biosynthesis II,PWY-6126,NA
+38,"G. elegans
+(Summer, N = 12)",superpathway of adenosine nucleotides de novo biosynthesis II;PWY-6126,0.007417638,0.000336325,superpathway of adenosine nucleotides de novo biosynthesis II,PWY-6126,NA
+39,"WMS
+(Summer, N = 10)",superpathway of adenosine nucleotides de novo biosynthesis II;PWY-6126,0.007106261,0.000228154,superpathway of adenosine nucleotides de novo biosynthesis II,PWY-6126,NA
+40,"VH Coral
+(Summer, N =6)",superpathway of branched amino acid biosynthesis;BRANCHED-CHAIN-AA-SYN-PWY,0.008212358,0.000335728,superpathway of branched amino acid biosynthesis,BRANCHED-CHAIN-AA-SYN-PWY,NA
+41,"G. elegans
+(Summer, N = 12)",superpathway of branched amino acid biosynthesis;BRANCHED-CHAIN-AA-SYN-PWY,0.008539885,0.000577465,superpathway of branched amino acid biosynthesis,BRANCHED-CHAIN-AA-SYN-PWY,NA
+42,"WMS
+(Summer, N = 10)",superpathway of branched amino acid biosynthesis;BRANCHED-CHAIN-AA-SYN-PWY,0.008132328,0.000444891,superpathway of branched amino acid biosynthesis,BRANCHED-CHAIN-AA-SYN-PWY,NA
+43,"VH Coral
+(Summer, N =6)",superpathway of L-isoleucine biosynthesis I;PWY-3001,0.007319291,0.000265251,superpathway of L-isoleucine biosynthesis I,PWY-3001,NA
+44,"G. elegans
+(Summer, N = 12)",superpathway of L-isoleucine biosynthesis I;PWY-3001,0.007584511,0.000361287,superpathway of L-isoleucine biosynthesis I,PWY-3001,NA
+45,"WMS
+(Summer, N = 10)",superpathway of L-isoleucine biosynthesis I;PWY-3001,0.00752203,0.000346979,superpathway of L-isoleucine biosynthesis I,PWY-3001,NA
+46,"VH Coral
+(Summer, N =6)",superpathway of L-serine and glycine biosynthesis I;SER-GLYSYN-PWY,0.007437548,0.000257971,superpathway of L-serine and glycine biosynthesis I,SER-GLYSYN-PWY,NA
+47,"G. elegans
+(Summer, N = 12)",superpathway of L-serine and glycine biosynthesis I;SER-GLYSYN-PWY,0.007654187,0.000660421,superpathway of L-serine and glycine biosynthesis I,SER-GLYSYN-PWY,NA
+48,"WMS
+(Summer, N = 10)",superpathway of L-serine and glycine biosynthesis I;SER-GLYSYN-PWY,0.007783636,0.000342822,superpathway of L-serine and glycine biosynthesis I,SER-GLYSYN-PWY,NA
+49,"VH Coral
+(Summer, N =6)",superpathway of pyrimidine nucleobases salvage;PWY-7208,0.008438543,0.000265444,superpathway of pyrimidine nucleobases salvage,PWY-7208,NA
+50,"G. elegans
+(Summer, N = 12)",superpathway of pyrimidine nucleobases salvage;PWY-7208,0.008026144,0.000368933,superpathway of pyrimidine nucleobases salvage,PWY-7208,NA
+51,"WMS
+(Summer, N = 10)",superpathway of pyrimidine nucleobases salvage;PWY-7208,0.007846288,0.000434958,superpathway of pyrimidine nucleobases salvage,PWY-7208,NA
+52,"VH Coral
+(Summer, N =6)",superpathway of pyrimidine ribonucleotides de novo biosynthesis;PWY0-162,0.007638507,0.00019176,superpathway of pyrimidine ribonucleotides de novo biosynthesis,PWY0-162,NA
+53,"G. elegans
+(Summer, N = 12)",superpathway of pyrimidine ribonucleotides de novo biosynthesis;PWY0-162,0.007400002,0.000335758,superpathway of pyrimidine ribonucleotides de novo biosynthesis,PWY0-162,NA
+54,"WMS
+(Summer, N = 10)",superpathway of pyrimidine ribonucleotides de novo biosynthesis;PWY0-162,0.00712879,0.000253888,superpathway of pyrimidine ribonucleotides de novo biosynthesis,PWY0-162,NA
+55,"VH Coral
+(Summer, N =6)",TCA cycle I (prokaryotic);TCA,0.008198934,0.00019843,TCA cycle I (prokaryotic),TCA,NA
+56,"G. elegans
+(Summer, N = 12)",TCA cycle I (prokaryotic);TCA,0.007504507,0.000386324,TCA cycle I (prokaryotic),TCA,NA
+57,"WMS
+(Summer, N = 10)",TCA cycle I (prokaryotic);TCA,0.007207481,0.000284786,TCA cycle I (prokaryotic),TCA,NA
+58,"VH Coral
+(Summer, N =6)",UMP biosynthesis;PWY-5686,0.007508228,0.000247649,UMP biosynthesis,PWY-5686,NA
+59,"G. elegans
+(Summer, N = 12)",UMP biosynthesis;PWY-5686,0.007493104,0.000460589,UMP biosynthesis,PWY-5686,NA
+60,"WMS
+(Summer, N = 10)",UMP biosynthesis;PWY-5686,0.007296434,0.000325963,UMP biosynthesis,PWY-5686,NA

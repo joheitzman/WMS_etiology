@@ -1,0 +1,11 @@
+"","Picrust_description","Experiment_Other","OTU","meanpath","sdpath","n"
+"1","glycerol degradation to butanol","Gelidium","PWY-7003",0.0022,0.0062,15
+"2","glycerol degradation to butanol","Sediment","PWY-7003",4e-04,8e-04,5
+"3","nicotinate degradation I","Gelidium","PWY-722",7e-04,0.0027,15
+"4","nicotinate degradation I","Sediment","PWY-722",0.0145,0.0324,5
+"5","superpathway of L-arginine and L-ornithine degradation","Gelidium","ORNARGDEG-PWY",0.0014,0.0054,15
+"6","superpathway of L-arginine and L-ornithine degradation","Sediment","ORNARGDEG-PWY",0.0406,0.0908,5
+"7","superpathway of L-arginine, putrescine, and 4-aminobutanoate degradation","Gelidium","ARGDEG-PWY",0.0014,0.0054,15
+"8","superpathway of L-arginine, putrescine, and 4-aminobutanoate degradation","Sediment","ARGDEG-PWY",0.0406,0.0908,5
+"9","superpathway of ornithine degradation","Gelidium","ORNDEG-PWY",0.0022,0.0086,15
+"10","superpathway of ornithine degradation","Sediment","ORNDEG-PWY",0.0478,0.1068,5

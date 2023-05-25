@@ -1,0 +1,17 @@
+"","Experiment_Other","OTU","merged","meanasv","sdasv","n"
+"1","Disease","ASV159","Campilobacterota_Campylobacteria_Campylobacterales_Arcobacteraceae_uncultured_uncultured_organism",1.1464,1.4211,9
+"2","Disease","ASV162","Spirochaetota_Spirochaetia_Spirochaetales_Spirochaetaceae_Sediminispirochaeta_uncultured_bacterium",0.4529,0.5855,9
+"3","Disease","ASV24","Spirochaetota_Spirochaetia_Spirochaetales_Spirochaetaceae_Spirochaeta_2_uncultured_bacterium",1.5698,3.5584,9
+"4","Disease","ASV297","Firmicutes_Bacilli_Izemoplasmatales_Izemoplasmatales_Izemoplasmatales_uncultured_bacterium",0.6039,0.8141,9
+"5","Disease","ASV31","Proteobacteria_Gammaproteobacteria_Chromatiales_Chromatiaceae_Marichromatium_uncultured_bacterium",0.1615,0.4846,9
+"6","Disease","ASV48","Verrucomicrobiota_Kiritimatiellae_Kiritimatiellales_Kiritimatiellaceae_R76-B128_uncultured_bacterium",0.1931,0.3849,9
+"7","Disease","ASV790","Bdellovibrionota_Bdellovibrionia_Bdellovibrionales_Bdellovibrionaceae_OM27_clade_uncultured_bacterium",0.119,0.3571,9
+"8","Disease","ASV844","Planctomycetota_Planctomycetes_Planctomycetales_Gimesiaceae_uncultured_uncultured_planctomycete",0.0548,0.1643,9
+"9","Sediment","ASV159","Campilobacterota_Campylobacteria_Campylobacterales_Arcobacteraceae_uncultured_uncultured_organism",0.1654,0.3698,5
+"10","Sediment","ASV162","Spirochaetota_Spirochaetia_Spirochaetales_Spirochaetaceae_Sediminispirochaeta_uncultured_bacterium",0.3307,0.7396,5
+"11","Sediment","ASV24","Spirochaetota_Spirochaetia_Spirochaetales_Spirochaetaceae_Spirochaeta_2_uncultured_bacterium",0.6898,1.0358,5
+"12","Sediment","ASV297","Firmicutes_Bacilli_Izemoplasmatales_Izemoplasmatales_Izemoplasmatales_uncultured_bacterium",0.0352,0.0788,5
+"13","Sediment","ASV31","Proteobacteria_Gammaproteobacteria_Chromatiales_Chromatiaceae_Marichromatium_uncultured_bacterium",0.0413,0.0924,5
+"14","Sediment","ASV48","Verrucomicrobiota_Kiritimatiellae_Kiritimatiellales_Kiritimatiellaceae_R76-B128_uncultured_bacterium",0.0819,0.1832,5
+"15","Sediment","ASV790","Bdellovibrionota_Bdellovibrionia_Bdellovibrionales_Bdellovibrionaceae_OM27_clade_uncultured_bacterium",0.0944,0.2111,5
+"16","Sediment","ASV844","Planctomycetota_Planctomycetes_Planctomycetales_Gimesiaceae_uncultured_uncultured_planctomycete",0.1515,0.3387,5
