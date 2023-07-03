@@ -401,7 +401,7 @@ ggsave("all_figures/bubble_plots/field_bubble_plot.png", width = 7, height = 5)
 
 ```
 
-## Field Incubation NMDs
+## Field nMDS
 ```{r Bact consortia analysis - Field}
 
 
@@ -465,7 +465,7 @@ plot.nmds.samps <-
 ```
 
 
-## Field Incubation Stats
+## Field Stats
 ```{r Field - PERMANOVA}
 physeq_main_n <- normalize(physeq_trimmed, method = "none")
 physeq_field_n <- ps_filter(physeq_main_n, Environment_plus == "Field" & Experiment_Season != c("Disease_Winter"))
@@ -702,7 +702,7 @@ ggsave("all_figures/bubble_plots/summeronly_incub_bubble_plot.png", width = 5, h
 ```
 
 
-## Summer Incubation NMDs
+## Summer Incubation nMDS
 ```{r Bact consortia analysis - Incubation - Only Summer}
 
 physeq_main_n <- normalize(physeq_trimmed, method = "none") %>% tax_glom("Species")
